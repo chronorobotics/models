@@ -65,6 +65,7 @@ class CTemporal
 		int64_t  lastTime;
 		int numElements;
 		int maxPeriod;
+		float correction;
 		ETemporalType type;
 };
 

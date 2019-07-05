@@ -20,15 +20,15 @@ def python_function_update(dataset):
     # training_coordinates = None  # free memory?
     # parameters
     #### testovani zmeny "sily" periody pri zmene poctu shluku
-    longest = 60*60*24*7*4 # testing one day
-    shortest = 60*60*4 # testing one day
+    longest = 60*60*24 # testing one day
+    shortest = 60*60 # testing one day
     #### konec testovani
-    edges_of_cell = [60]
+    edges_of_cell = [600]
     k = 1  # muzeme zkusit i 9
     # hours_of_measurement = 24 * 7  # nepotrebne
     radius = 1.0
     number_of_periods = 4
-    evaluation = True 
+    evaluation = True
     C_p, COV_p, density_integrals_p, structure_p, average_p, k_p =\
         lrn.proposed_method(longest, shortest, dataset,
                             edges_of_cell, k,
@@ -52,8 +52,12 @@ def python_function_estimate(whole_model, time):
         return whole_model[0][0]  # average
     else:
         freq_p = mdl.one_freq(np.array([[time]]), whole_model[0],
+    #freq_p = mdl.one_freq(np.array([[time]]), whole_model[0],
                               whole_model[1], whole_model[3], whole_model[4],
                               whole_model[2])
+    #print('model: ' + str(whole_model))
+    #print('time: ' + str(time))
+    #print('vystup: ' + str(float(freq_p[0])))
     return float(freq_p[0])
 
 
@@ -174,14 +178,15 @@ def python_function_model_to_array(whole_model):
     start = end
     end = start + len_reshaped_k_4
     output_array[start: end] =  reshaped_k_4
-    #print(output_array)
     return output_array
 
 
-def python_function_array_to_model(input_array):
+def python_function_array_to_model(array):
     """
     """
-    #print(input_array)
+    input_array = np.copy(array)
+    #print('jsem v array to model')
+    #print('toto je ten array: ' + str(input_array))
     number_of_parameters = 5
     len_shapes = []
     position = 0  # we do not need the zeroth position information
@@ -224,5 +229,5 @@ def python_function_array_to_model(input_array):
 
     # k transformation
     k = int(parameters[4])
-
+    #print('a toto je vystupni model: ' + str(parameters[0]) + str(parameters[1]) + str(parameters[2]) + str(structure) + str(k))
     return parameters[0], parameters[1], parameters[2], structure, k

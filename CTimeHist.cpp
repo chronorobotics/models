@@ -10,6 +10,7 @@ CTimeHist::CTimeHist(int idd)
 	measurements = 0;
 	maxPeriod = 0;
 	numElements = 0;
+	correction = 0;
 	type = TT_HISTOGRAM;
 }
 
@@ -53,7 +54,7 @@ int CTimeHist::add(uint32_t time,float state)
 void CTimeHist::update(int modelOrder,unsigned int* times,float* signal,int length)
 {
 	for (int i=0;i<numElements;i++){
-		 if (measurementsHistogram[i] > 0) predictHistogram[i] = storedHistogram[i]/measurementsHistogram[i];
+		 if (measurementsHistogram[i] > 0) predictHistogram[i] = storedHistogram[i]/measurementsHistogram[i]; else predictHistogram[i] = 0.5;
 	}
 }
 

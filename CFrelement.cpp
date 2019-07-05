@@ -18,6 +18,7 @@ CFrelement::CFrelement(int idi)
 	firstTime = -1;
 	lastTime = -1;
 	measurements = 0;
+	correction = 0;
 	type = TT_FREMEN;
 }
 
