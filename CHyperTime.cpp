@@ -182,6 +182,7 @@ void CHyperTime::update(int modelOrder,unsigned int* times,float* signal,int len
 
 float CHyperTime::estimate(uint32_t t)
 {
+	float result = 0.5;
 	/*is the model valid?*/
 	if (modelNegative->isTrained() && modelPositive->isTrained()){
 		Mat sample(1, spaceDimension + timeDimension, CV_32FC1);

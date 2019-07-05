@@ -4,8 +4,18 @@
 #include "CExpectation.h"
 
 CExpectation::CExpectation(int idd) :
-	positive(idd),
-	negative(idd)
+	models(),
+	means(),
+	class_model(0, 0)
+{
+	throw "We don't do this here";
+}
+
+CExpectation::CExpectation(int idd, int dimension_) :
+	dimension(dimension_),
+	models(),
+	means(),
+	class_model(5, dimension_)
 {
 	id=idd;
 	firstTime = -1;
@@ -16,8 +26,9 @@ CExpectation::CExpectation(int idd) :
 	type = TT_EXPECTATION;
 	numSamples = 0;
 
-	positives = 0;
-	negatives = 0;
+	for (int i = class_model.get_cluster_count(); i; --i) {
+		models.push_back(EMSqdist(idd));
+	}
 
 	srandom(time(0));
 }
@@ -39,7 +50,7 @@ CExpectation::TimeSample::TimeSample() :
 {
 }
 
-CExpectation::TimeSample::TimeSample(long t_, float v_) :
+CExpectation::TimeSample::TimeSample(long t_, std::vector<bool> v_) :
 	t(t_),
 	v(v_)
 {
@@ -48,56 +59,81 @@ CExpectation::TimeSample::TimeSample(long t_, float v_) :
 // adds new state observations at given times
 int CExpectation::add(uint32_t time, float state)
 {
+	throw "We don't do this here";
+}
+
+int CExpectation::add_v(uint32_t time, std::vector<bool> state)
+{
 	sampleArray[numSamples] = TimeSample(time, state);
 	numSamples++;
 
-	if (state > 0.5) {
-		positive.add_time(time, 1);
-		positives++;
-	} else {
-		negative.add_time(time, 1);
-		negatives++;
-	}
+	class_model.add_value(state);
 	return 0;
 }
 
 /*not required in incremental version*/
 void CExpectation::update(int modelOrder, unsigned int* times, float* signal, int length)
 {
-	positive.train();
-	negative.train();
-
-	ofstream myfile0("0.txt");
-	ofstream myfile1("1.txt");
-	//ofstream myfile2("2.txt");
+	class_model.train();
+	means = class_model.get_means();
+	std::cout << numSamples << " " << means.size() << " " << models.size() << std::endl;
 	for (int i = 0; i < numSamples; ++i) {
-		myfile0 << sampleArray[i].v << std::endl;
-		myfile1 << estimate(sampleArray[i].t) << std::endl;
-		//myfile1 << positive.get_density_at(sampleArray[i].t)/negatives << std::endl;
-		//myfile2 << negative.get_density_at(sampleArray[i].t)/positives*100 << std::endl;
+		std::vector<double> alpha = class_model.get_alpha_at(sampleArray[i].v);
+		for (int j = 0; j < alpha.size(); ++j) {
+			models[j].add_time(sampleArray[i].t, alpha[j]);
+		}
 	}
-	myfile0.close();
-	myfile1.close();
-	//myfile2.close();
+
+	for (int i = 0; i < models.size(); ++i) {
+		models[i].train();
+		models[i].print();
+	}
+
+	//class_model.print();
+	std::cout << "Trained" << std::endl;
 }
 
 /*text representation of the fremen model*/
 void CExpectation::print(bool verbose)
 {
-	std::cout << "Positive:";
-	positive.print();
-	std::cout << std::endl << "Negative:";
-	negative.print();
-	std::cout << std::endl;
+	/*for (int i = 0; i < means.size(); ++i) {
+		std::cout << "Mean (";
+		for (int j = 0; j < dimension; ++j) {
+			if (j) {
+				std::cout << ", ";
+			}
+			std::cout << means[i][j];
+		}
+		std::cout << "): ";
+		models[i].print();
+		std::cout << std::endl;
+	}*/
+	class_model.print();
+}
+
+std::vector<float> CExpectation::estimate_v(uint32_t time)
+{
+	std::vector<float> s;
+	s.resize(dimension, 0);
+	double t = 0;
+	for (int i = 0; i < means.size(); ++i) {
+		double density = models[i].get_density_at(time);
+		for (int j = 0; j < dimension; ++j) {
+			s[j] += means[i][j] * density;
+		}
+		t += density;
+	}
+
+	for (int i = 0; i < dimension; ++i) {
+		s[i] /= t;
+	}
+
+	return s;
 }
 
 float CExpectation::estimate(uint32_t time)
 {
-	double pd = positive.get_density_at(time) * positives;
-	double nd = negative.get_density_at(time) * negatives;
-
-	return pd / (pd + nd);
-	return pd;
+	throw "We don't do this here.";
 }
 
 float CExpectation::predict(uint32_t time)
@@ -124,30 +160,47 @@ int CExpectation::load(const char* name)
 
 int CExpectation::save(FILE* file, bool lossy)
 {
-	positive.save(file, lossy);
-	negative.save(file, lossy);
-	fwrite(&positives, sizeof(int), 1, file);
-	fwrite(&negatives, sizeof(int), 1, file);
+	int size = models.size();
+	fwrite(&size, sizeof(int), 1, file);
+	fwrite(&dimension, sizeof(int), 1, file);
+	for (int i = 0; i < models.size(); ++i) {
+		for (int j = 0; j < dimension; ++j) {
+			fwrite(&(means[i][j]), sizeof(double), 1, file);
+		}
+		models[i].save(file, lossy);
+	}
 	return 0;
 }
 
 int CExpectation::load(FILE* file)
 {
-	positive.load(file);
-	negative.load(file);
-	fread(&positives, sizeof(int), 1, file);
-	fread(&negatives, sizeof(int), 1, file);
+	int size;
+	fread(&size, sizeof(int), 1, file);
+	fread(&dimension, sizeof(int), 1, file);
+	means.resize(size);
+	models.resize(size);
+	for (int i = 0; i < models.size(); ++i) {
+		means[i].resize(dimension);
+		for (int j = 0; j < dimension; ++j) {
+			fread(&(means[i][j]), sizeof(double), 1, file);
+		}
+		models[i].load(file);
+	}
 	return 0;
 }
 
 int CExpectation::exportToArray(double* array,int maxLen)
 {
 	int pos = 0;
-	array[pos++] = type;
-	positive.exportToArray(array, maxLen, pos);
-	negative.exportToArray(array, maxLen, pos);
-	array[pos++] = positives;
-	array[pos++] = negatives;
+	array[pos++] = TT_EXPECTATION;
+	array[pos++] = models.size();
+	array[pos++] = dimension;
+	for (int i = 0; i < models.size(); ++i) {
+		for (int j = 0; j < dimension; ++j) {
+			array[pos++] = means[i][j];
+		}
+		models[i].exportToArray(array, maxLen, pos);
+	}
 	return pos;
 }
 
@@ -155,12 +208,18 @@ int CExpectation::importFromArray(double* array,int len)
 {
 	int pos = 0;
 	type = (ETemporalType)array[pos++];
-	if (type != TT_MEAN) std::cerr << "Error loading the model, type mismatch." << std::endl;
-	positive.importFromArray(array, len, pos);
-	negative.importFromArray(array, len, pos);
-	positives = array[pos++];
-	negatives = array[pos++];
-	update(0);
+	if (type != TT_EXPECTATION) std::cerr << "Error loading the model, type mismatch." << std::endl;
+	int size = array[pos++];
+	dimension = array[pos++];
+	means.resize(size);
+	models.resize(size);
+	for (int i = 0; i < models.size(); ++i) {
+		means[i].resize(dimension);
+		for (int j = 0; j < dimension; ++j) {
+			means[i][j] = array[pos++];
+		}
+		models[i].importFromArray(array, len, pos);
+	}
 	return pos;
 }
 

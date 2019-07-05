@@ -27,12 +27,8 @@ double(*tableOfMeasurements)[numberOfDimensions]{ new
 #endif
 
 // tyto promenne by mely byt public
-long measurements = 0;
 const long numberOfDimensions = 2;
 const long maxMeasurements = 10000000;
-//double tableOfMeasurements[numberOfDimensions][maxMeasurements];
-double(*tableOfMeasurements)[numberOfDimensions]{ new double[maxMeasurements][numberOfDimensions] };
-
 
 
 DLIB_NUMPY_IMPORT_ARRAY_RETURN_TYPE import_numpy_stuff()
@@ -50,9 +46,10 @@ CPythonHyperTime::CPythonHyperTime(int id)
     setenv("PYTHONPATH", "../src/models/python", 1);
 
     /* Py_SetProgramName(argv[0]); //default 'python', I will not call that */
-
+    measurements = 0;
     //initialize the python interpreter
     Py_Initialize();
+    import_numpy_stuff();
     //importing of the python script
     pModuleName = PyUnicode_FromString("python_module");//name must be changed
     pModule = PyImport_Import(pModuleName);
@@ -69,6 +66,8 @@ CPythonHyperTime::CPythonHyperTime(int id)
     const int maxMeasurements = 10000;
     double tableOfMeasurements [maxMeasurements][numberOfDimensions];
 */
+    stateArray = (float*)calloc(maxMeasurements,sizeof(float));
+    timeArray = (uint32_t*)calloc(maxMeasurements,sizeof(uint32_t));
 }
 
 void CPythonHyperTime::init(int iMaxPeriod,int elements,int numActivities)
@@ -83,18 +82,17 @@ CPythonHyperTime::~CPythonHyperTime()
     Py_XDECREF(pFunc2);
     Py_Finalize(); // shuts the interpreter down
     // clear the memory
-    free(tableOfMeasurements);
+    free(stateArray);
+    free(timeArray);
 }
 
 // adds new state observations at given times
 int CPythonHyperTime::add(uint32_t time,float state)
 {
-    tableOfMeasurements[measurements][0] = (double)time;
-    tableOfMeasurements[measurements][1] = (double)state;
-
-    measurements++;
-
-    return 0; 
+	stateArray[measurements] = state; 
+	timeArray[measurements] = time; 
+	measurements++;
+	return 0; 
 }
 /*
 int CPythonHyperTime::exportToArray(double* array,int maxLen)
@@ -111,71 +109,76 @@ return -1;
  
 void CPythonHyperTime::update(int maxOrder,unsigned int* times,float* signal,int length)
 {
-    //initializing numpy array api
-    //instead of import_array();
-    import_numpy_stuff();
+	double(*tableOfMeasurements)[numberOfDimensions]{ new double[maxMeasurements][numberOfDimensions] };
+	for (int i = 0;i<measurements;i++){
+		tableOfMeasurements[i][0] = (double)timeArray[i];
+		tableOfMeasurements[i][1] = (double)stateArray[i];
+	}	
 
-    // Convert it to a NumPy array
-    //npy_intp dims[numberOfDimensions]{numberOfDimensions,maxMeasurements};
-    //npy_intp dims[numberOfDimensions]{numberOfDimensions,measurements};
-    npy_intp dims[2]{measurements, numberOfDimensions};
-    //PyObject *pArray = PyArray_SimpleNewFromData(
-        //numberOfDimensions, dims, NPY_FLOAT, reinterpret_cast<void*>(tableOfMeasurements));
-    PyObject *pArray = PyArray_SimpleNewFromData(
-        2, dims, NPY_DOUBLE, reinterpret_cast<void*>(tableOfMeasurements));
-    if (!pArray)
-        std::cout << "numpy array was not created" << std::endl;
+	//initializing numpy array api
+	//instead of import_array();
+	//TODOimport_numpy_stuff();
 
-
-    // call python function
-    PyObject *pFunc = PyObject_GetAttrString(pModule,"python_function_update"); // name must be changed
-    if (!pFunc)
-        std::cout << "python function was not created" << std::endl; //?
-    if (!PyCallable_Check(pFunc))
-        std::cout << "python function is not callable." << std::endl;
+	// Convert it to a NumPy array
+	//npy_intp dims[numberOfDimensions]{numberOfDimensions,maxMeasurements};
+	//npy_intp dims[numberOfDimensions]{numberOfDimensions,measurements};
+	npy_intp dims[2]{measurements, numberOfDimensions};
+	//PyObject *pArray = PyArray_SimpleNewFromData(
+	//numberOfDimensions, dims, NPY_FLOAT, reinterpret_cast<void*>(tableOfMeasurements));
+	PyObject *pArray = PyArray_SimpleNewFromData(
+			2, dims, NPY_DOUBLE, reinterpret_cast<void*>(tableOfMeasurements));
+	if (!pArray)
+		std::cout << "numpy array was not created" << std::endl;
 
 
-
-// v kazdem pripade bych nemel delat to numpy array z celeho toho arraye, ale jen z vyuzite casti. Pak se pouzije tato cas kodu, nebot pArray nebude obsahovat nesmyslne (nenaplnene) radky
-    // np_ret = mymodule.array_tutorial(np_arr)
-    pModel = PyObject_CallFunctionObjArgs(pFunc, pArray, NULL);
-    if (!pModel)
-        std::cout << "python function did not respond" << std::endl;
-//zde predpokladame, ze pModel je pythoni objekt obsahujici libovolny pythoni bordel, ktery definuje model
-
-
-/*
-//### tady zacina docasna cast
-
-    // np_ret = mymodule.array_tutorial(np_arr)
-
-    PyObject *pArgs0 = PyTuple_New(2);
-    PyTuple_SetItem(pArgs0, 0, pArray);
-
-    PyObject *pValue0 = PyInt_FromLong(measurements);
-    if (!pValue0)
-        std::cout << "unable to convert  value" << std::endl;
-
-    PyTuple_SetItem(pArgs0, 1, pValue0);
-    // np_ret = mymodule.array_tutorial(np_arr)
-    PyObject *pModel = PyObject_CallObject(pFunc, pArgs0);
-    Py_DECREF(pArgs0);
-    if (!pModel)
-        std::cout << "python function did not respond" << std::endl;
-//zde predpokladame, ze pModel je pythoni objekt obsahujici libovolny pythoni bordel, ktery definuje model
-// nicmene, ja tady budu muset ukoncit tu funkci a smazat bordel z ramky
-
-    Py_DECREF(pValue0);
-
-//### tady konci docasna cast
-*/
-
-    Py_DECREF(pArray);
-    Py_XDECREF(pFunc); //XDECREF?
-
-    std::cout << "update prosel" << std::endl;
+	// call python function
+	PyObject *pFunc = PyObject_GetAttrString(pModule,"python_function_update"); // name must be changed
+	if (!pFunc)
+		std::cout << "python function was not created" << std::endl; //?
+	if (!PyCallable_Check(pFunc))
+		std::cout << "python function is not callable." << std::endl;
 
 
+
+	// v kazdem pripade bych nemel delat to numpy array z celeho toho arraye, ale jen z vyuzite casti. Pak se pouzije tato cas kodu, nebot pArray nebude obsahovat nesmyslne (nenaplnene) radky
+	// np_ret = mymodule.array_tutorial(np_arr)
+	pModel = PyObject_CallFunctionObjArgs(pFunc, pArray, NULL);
+	if (!pModel)
+		std::cout << "python function did not respond" << std::endl;
+	//zde predpokladame, ze pModel je pythoni objekt obsahujici libovolny pythoni bordel, ktery definuje model
+
+
+	/*
+	//### tady zacina docasna cast
+
+	// np_ret = mymodule.array_tutorial(np_arr)
+
+	PyObject *pArgs0 = PyTuple_New(2);
+	PyTuple_SetItem(pArgs0, 0, pArray);
+
+	PyObject *pValue0 = PyInt_FromLong(measurements);
+	if (!pValue0)
+	std::cout << "unable to convert  value" << std::endl;
+
+	PyTuple_SetItem(pArgs0, 1, pValue0);
+	// np_ret = mymodule.array_tutorial(np_arr)
+	PyObject *pModel = PyObject_CallObject(pFunc, pArgs0);
+	Py_DECREF(pArgs0);
+	if (!pModel)
+	std::cout << "python function did not respond" << std::endl;
+	//zde predpokladame, ze pModel je pythoni objekt obsahujici libovolny pythoni bordel, ktery definuje model
+	// nicmene, ja tady budu muset ukoncit tu funkci a smazat bordel z ramky
+
+	Py_DECREF(pValue0);
+
+	//### tady konci docasna cast
+	 */
+
+	Py_DECREF(pArray);
+	Py_XDECREF(pFunc); //XDECREF?
+
+	std::cout << "update prosel" << std::endl;
+	free(tableOfMeasurements);
 }
 
 /*text representation of the fremen model*/
@@ -219,7 +222,7 @@ float CPythonHyperTime::estimate(uint32_t time)
     Py_DECREF(pValue);
     Py_DECREF(pEstimate);
 //    Py_XDECREF(pFunc2);
-
+    if (isnormal(estimateVal)!=0) return estimateVal;
     return estimateVal;
 }
 
@@ -341,7 +344,7 @@ int CPythonHyperTime::exportToArray(double* array,int maxLen)
         array[i] = temp_array[i];
         //std::cout << "pozice " << i << " vlozena hodnota " << array[i] << std::endl;
     }
-
+    array[0] = TT_PYTHON;
     Py_DECREF(numpyArray5);
     //Py_DECREF(pArray5);
     Py_XDECREF(pFunc5);

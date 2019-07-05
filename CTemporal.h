@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include "CTimer.h"
 
-#define	MAX_TEMPORAL_MODEL_SIZE 10000
+#define	MAX_TEMPORAL_MODEL_SIZE 100000
 #define MAX_ID_LENGTH 100
 
 using namespace std;
