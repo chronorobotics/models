@@ -11,6 +11,7 @@ CTimeMean::CTimeMean(int idd)
 	maxPeriod = 0;
 	numElements = 0;
 	positive = 0;
+	correction = 0;
 	type = TT_MEAN;
 }
 

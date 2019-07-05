@@ -1,12 +1,10 @@
-#ifndef CPYTHONHYPERTIME_H
-#define CPYTHONHYPERTIME_H
+#ifndef CMISES_H
+#define CMISES_H
 
-// tyto knihovny jsou potreba
-#define NPY_NO_DEPRECATED_API NPY_1_7_API_VERSION
-#include <Python.h>
-#include <numpy/arrayobject.h>
-#include <iostream>
+#include <opencv2/ml/ml.hpp>
 
+using namespace cv;
+using namespace ml;
 
 #include <stdio.h>
 #include <iostream>
@@ -17,20 +15,21 @@
 #include "CTimer.h"
 #include "CTemporal.h"
 
-
-#define FREMEN_AMPLITUDE_THRESHOLD 0.0
-	
 /**
 @author Tom Krajnik
 */
+typedef struct{
+	long int t;
+	float x,y;
+}SSample;
 
 using namespace std;
 
-class CPythonHyperTime: public CTemporal
+class CMises: public CTemporal
 {
 	public:
-		CPythonHyperTime(int id);
-		~CPythonHyperTime();
+		CMises(int id);
+		~CMises();
 
 		//adds a serie of measurements to the data
 		int add(uint32_t time,float state);
@@ -43,25 +42,18 @@ class CPythonHyperTime: public CTemporal
 		void update(int maxOrder,unsigned int* times = NULL,float* signal = NULL,int length = 0);
 		void print(bool verbose=true);
 
+		int exportToArray(double* array,int maxLen);
+		int importFromArray(double* array,int len);
 		int save(FILE* file,bool lossy = false);
 		int load(FILE* file);
 		int save(const char* name,bool lossy = false);
 		int load(const char* name);
 		
-	private:
-		int exportToArray(double* array,int maxLen);
-		int importFromArray(double* array,int len);
-
-		char id[MAX_ID_LENGTH];
-		long measurements;
-		uint32_t *timeArray; 		
-		float *stateArray; 		
-
-		PyObject *pModuleName;
-		PyObject *pModule;
-		PyObject *pModel;
-		PyObject *pFunc2;
-
+		SSample positiveArray[1000000];
+		SSample negativeArray[1000000];
+		int negatives,positives;
+		Ptr<EM> modelPositive;
+		Ptr<EM> modelNegative;
 };
 
 #endif

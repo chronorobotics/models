@@ -2,20 +2,20 @@
 
 
 import numpy as np
-import python_module as pm
-#import tested_doors_python_module as pm
+#import python_module as pm
+import tested_doors_python_module as pm
 import dataset_io as dio
 
 #c = dio.loading_data('../data/training_two_weeks_01.txt')
 #c = dio.loading_data('../data/10_weeks_doors.txt')
-c = dio.loading_data('../../../data/greg_door_2016_min/training_data.txt')
+#c = dio.loading_data('../data/training_data.txt')
 
 
 #a = np.array([0, 7200, 14400, 21600, 28800, 36000, 43200, 50400, 57600, 64800, 72000, 79200])
 #b = np.array([0,0,1,1,0,0,1,1,0, 0,1, 1])
 #c = np.c_[a, b]
 
-"""
+
 with open('../data/data.txt', 'r') as f:
     i = 0
     for line  in f:
@@ -35,8 +35,8 @@ with open('../data/data.txt', 'r') as f:
             print('feature no.: ' + str(i))
 
 #print(list(b))
-"""
-model = pm.python_function_update(c)
+
+#model = pm.python_function_update(c)
 print('update prosel')
 
 pm.python_function_save(model, 'save_pokus')
