@@ -12,23 +12,16 @@ def python_function_update(dataset):
                model
     """
     ###################################################
-    # otevirani a zavirani dveri, pozitivni i negativni
+    # prujezdy
     ###################################################
-    # differentiate to positives and negatives
-    # path_n = training_coordinates[training_coordinates[:,1] == 0][:, 0:1]
-    # path_p = training_coordinates[training_coordinates[:,1] == 1][:, 0:1]
-    # training_coordinates = None  # free memory?
-    # parameters
-    #### testovani zmeny "sily" periody pri zmene poctu shluku
-    longest = 60*60*24*7*4 # testing one day
-    shortest = 60*60*4 # testing one day
-    #### konec testovani
-    edges_of_cell = [60]
-    k = 1  # muzeme zkusit i 9
-    # hours_of_measurement = 24 * 7  # nepotrebne
-    radius = 1.0
-    number_of_periods = 4
-    evaluation = True 
+    dataset = np.c_[dataset, np.ones(len(dataset))]
+    longest = 60*60*24*7 # testing one day
+    shortest = 6*60*60 # testing one day
+    edges_of_cell = [600, 70]
+    k = 2
+    radius = 0.2
+    number_of_periods = 2
+    evaluation = False
     C_p, COV_p, density_integrals_p, structure_p, average_p, k_p =\
         lrn.proposed_method(longest, shortest, dataset,
                             edges_of_cell, k,
@@ -46,15 +39,26 @@ def python_function_estimate(whole_model, time):
     objective: to estimate event occurences in the given time
     """
     ###################################################
-    # otevirani a zavirani dveri, pozitivni i negativni
+    # prujezdy
     ###################################################
     if whole_model[3][0] == 0 and len(whole_model[3][1]) == 0:  # no model
         return whole_model[0][0]  # average
     else:
-        freq_p = mdl.one_freq(np.array([[time]]), whole_model[0],
+        deleni = 100
+        minimum = 0 # asi
+        maximum = 1.0 # necelych asi
+        sloupec_hodnot = (np.arange(deleni) ) * maximum / deleni
+        sloupec_casu = np.ones(deleni) * time
+        cely_vstup = np.c_[sloupec_casu, sloupec_hodnot]
+        freqs = mdl.iter_over_freqs(cely_vstup, whole_model[0],
                               whole_model[1], whole_model[3], whole_model[4],
                               whole_model[2])
-    return float(freq_p[0])
+        soucet = np.sum(freqs)
+        if soucet == 0:
+            return float(0.0)
+        else:
+            #return float(np.sum(sloupec_hodnot * freqs) / soucet)
+            return sloupec_hodnot[freqs == np.max(freqs)]
 
 
 def python_function_save(whole_model, file_path):

@@ -8,7 +8,8 @@ import dataset_io as dio
 
 #c = dio.loading_data('../data/training_two_weeks_01.txt')
 #c = dio.loading_data('../data/10_weeks_doors.txt')
-c = dio.loading_data('../../../data/greg_door_2016_min/training_data.txt')
+#c = dio.loading_data('../data/training_data.txt')
+c = dio.loading_data('../../../data/witham/training_data.txt')
 
 
 #a = np.array([0, 7200, 14400, 21600, 28800, 36000, 43200, 50400, 57600, 64800, 72000, 79200])
@@ -58,8 +59,8 @@ print(model[1])
 print(model[2])
 print(model[3])
 print(model[4])
-#for i in xrange(10):
-#    print(pm.python_function_estimate(model, c[-1, 0] + i * 60))
+for i in xrange(10):
+    print(pm.python_function_estimate(model, c[-1, 0] + i * 80000))
 
 
 

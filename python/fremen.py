@@ -130,8 +130,8 @@ def max_influence(W, G):
     #print('soucet velikosti period')
     #print(np.sum(np.absolute(G)))
     #### konec testovani
-    #maximum_position = np.argmax(np.absolute(G[1:])) + 1
-    maximum_position = np.argmax(np.absolute(G))
+    maximum_position = np.argmax(np.absolute(G[1:])) + 1
+    #maximum_position = np.argmax(np.absolute(G))
     #print('velikost nejvlivnejsi periody')
     #print(np.max(np.absolute(G)))
     # ! probably not elegant way of changing W

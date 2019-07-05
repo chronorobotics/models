@@ -68,6 +68,7 @@ class CHyperTime: public CTemporal
 
 	private:
 		void reinit_models_if_null();
+		float integral;
 };
 
 #endif

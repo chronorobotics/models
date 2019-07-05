@@ -81,10 +81,12 @@ void CFrelement::update(int modelOrder,unsigned int* times,float* signal,int len
 	float re,im;
 	//int duration = lastTime - firstTime;
 	predictGain = storedGain;
+	float balanceCoef = 1;
+	if (modelOrder > 10) balanceCoef = 0;
 	for (int i = 0;i<numElements;i++)
 	{
-		re = storedFrelements[i].realStates-storedGain*storedFrelements[i].realBalance;
-		im = storedFrelements[i].imagStates-storedGain*storedFrelements[i].imagBalance;
+		re = storedFrelements[i].realStates-balanceCoef*storedGain*storedFrelements[i].realBalance;
+		im = storedFrelements[i].imagStates-balanceCoef*storedGain*storedFrelements[i].imagBalance;
 		//if (1.5*storedFrelements[i].period <= duration && storedFrelements[i].period > shortestTime*2) storedFrelements[i].amplitude = sqrt(re*re+im*im)/measurements; else storedFrelements[i].amplitude = 0;
 		storedFrelements[i].amplitude = sqrt(re*re+im*im)/measurements;
 		if (storedFrelements[i].amplitude < FREMEN_AMPLITUDE_THRESHOLD) storedFrelements[i].amplitude = 0;

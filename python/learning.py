@@ -91,6 +91,7 @@ def proposed_method(longest, shortest, dataset, edges_of_cell, k,
         structure =  [0, [], []]                                                
         jump_out = 1                                                          
         k = 1
+    """
     else:
         #print('trying to remove : Inf')
         try:
@@ -100,6 +101,7 @@ def proposed_method(longest, shortest, dataset, edges_of_cell, k,
             #print('frequency Inf removed')
         except ValueError:
             pass
+    """
     #elif P == 0.0:
     #    print(structure)
     #    jump_out, k, structure, C, U, COV, density_integrals, W, ES, P, diff=\

@@ -4,7 +4,7 @@
 #include "CTimeHist.h"
 #include "CTimeNone.h"
 #include "CTimeMean.h"
-//#include "CMises.h"
+#include "CMises.h"
 #include "CPythonHyperTime.h"
 #include "CHyperTime.h"
 #include "CExpectation.h"
@@ -51,7 +51,7 @@ CTemporal* spawnTemporalModel(ETemporalType type,int maxPeriod,int elements,int 
 
 		case TT_PERGAM: 	temporalModel = new CPerGaM(0);			break;
 		case TT_ADAPTIVE: 	temporalModel = new CTimeAdaptiveHist(0);	break;
-//		case TT_MISES: 		temporalModel = new CMises(0);			break;
+		case TT_MISES: 		temporalModel = new CMises(0);			break;
 		case TT_EXPECTATION:	temporalModel = new CExpectation(elements); break;
 		case TT_MOMENTS:	temporalModel = new CMoments(elements);	break;
 		case TT_ADABOOST:	temporalModel = new CAdaboost(elements); break;
