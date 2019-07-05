@@ -7,12 +7,15 @@ CHyperTime::CHyperTime(int id)
 	type = TT_HYPER;
 	delete modelPositive;
 	delete modelNegative;
+//	modelPositive.release();
+//	modelNegative.release();
 	spaceDimension = 1;
 	timeDimension = 0;
 	maxTimeDimension = 10;
 	covarianceType = EM::COV_MAT_GENERIC;
 	positives = negatives = 0;
 	corrective = 1.0;
+	integral = 0;
 }
 
 void CHyperTime::init(int iMaxPeriod, int elements, int numClasses)
@@ -30,6 +33,7 @@ int CHyperTime::add(uint32_t time, float state)
 {
 	sampleArray[numSamples].t = time;
 	sampleArray[numSamples].v = state;
+	integral +=state;
 	numSamples++;
 	return 0; 
 }
@@ -67,13 +71,10 @@ void CHyperTime::update(int modelOrder,unsigned int* times,float* signal,int len
 	long int tDummy = 0.5;
 	for (int i = 0; i < numTraining; i++){
 		vDummy = sampleArray[i].v;
-		if (vDummy > 0.5) {
-			samplesPositive.push_back(vDummy);
-			positives++;
-		} else {
-			samplesNegative.push_back(vDummy);
-			negatives++;
-		}
+		samplesPositive.push_back(vDummy);
+		positives++;
+		samplesNegative.push_back(vDummy);
+		negatives++;
 	}
 
 	periods.clear();
@@ -101,10 +102,10 @@ void CHyperTime::update(int modelOrder,unsigned int* times,float* signal,int len
 		}
 
 		/*determine model weights*/
-		float integral = 0;
+		float integralMod = 0;
 		numEvaluation = numSamples;
-		for (int i = 0; i < numEvaluation; i++) integral += estimate(sampleArray[i].t);
-		corrective = corrective*positives/integral;
+		for (int i = 0; i < numEvaluation;i++) integralMod += estimate(sampleArray[i].t);
+		corrective = corrective*integral/integralMod;
 		
 		/*calculate evaluation error*/
 		for (int i = 0; i < numEvaluation; i++)
@@ -161,15 +162,12 @@ void CHyperTime::update(int modelOrder,unsigned int* times,float* signal,int len
 			{
 				vDummy = sampleArray[i].v;
 				tDummy = sampleArray[i].t;
-				if (vDummy > 0.5){
-					hypertimePositive.at<float>(positives, 0) = cos((float)tDummy/period*2*M_PI);
-					hypertimePositive.at<float>(positives, 1) = sin((float)tDummy/period*2*M_PI);
-					positives++;
-				} else {
-					hypertimeNegative.at<float>(negatives, 0) = cos((float)tDummy/period*2*M_PI);
-					hypertimeNegative.at<float>(negatives, 1) = sin((float)tDummy/period*2*M_PI);
-					negatives++;
-				}
+				hypertimePositive.at<float>(positives,0)=cos((float)tDummy/period*2*M_PI);
+				hypertimePositive.at<float>(positives,1)=sin((float)tDummy/period*2*M_PI);
+				positives++;
+				hypertimeNegative.at<float>(negatives,0)=cos((float)tDummy/period*2*M_PI);
+				hypertimeNegative.at<float>(negatives,1)=sin((float)tDummy/period*2*M_PI);
+				negatives++;
 			}
 			hconcat(samplesPositive, hypertimePositive, samplesPositive);
 			hconcat(samplesNegative, hypertimeNegative, samplesNegative);

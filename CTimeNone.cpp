@@ -41,12 +41,12 @@ void CTimeNone::print(bool verbose)
 
 float CTimeNone::estimate(uint32_t time)
 {
-	return 0;//estimation;
+	return 0.3;//half of linda's velocity
 }
 
 float CTimeNone::predict(uint32_t time)
 {
-	return 0;//estimation;
+	return 0.3;//half of linda's velocity
 	return estimation;
 }
 int CTimeNone::save(const char* name,bool lossy)

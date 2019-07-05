@@ -142,7 +142,8 @@ def partition_matrix(D, version):
         # U = U / np.sum(U, axis=0, keepdims=True)
     elif version == 'model':
         U = 1 / (D + np.exp(-100))
-        U[D < 1] = 1
+        U[D < 1] = 1  # U[D < 1] = 1 #!
+        U = U ** 2  # 2 #!
     elif version == 'hard':
         indices = np.argmin(D, axis=0)
         U = np.zeros_like(D)

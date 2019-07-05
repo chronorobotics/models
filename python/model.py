@@ -215,7 +215,7 @@ def iter_over_coordinates(input_coordinates_part, C, COV, structure, k):
     D = np.array(D)
     gc.collect()
     U = cl.partition_matrix(D, version='model')
-    U = U ** 2
+    #U = U ** 2 #!!!
     gc.collect()
     grid_densities_part = np.sum(U, axis=1, keepdims=True)
     return grid_densities_part
@@ -304,7 +304,8 @@ def iter_over_freqs(input_coordinates_part, C, COV, structure, k,
     D = np.array(D)
     gc.collect()
     U = cl.partition_matrix(D, version='model')
-    U = (U ** 2) * density_integrals
+    #U = (U ** 4) * density_integrals  # !!
+    U = U * density_integrals
     gc.collect()
     freqs_part = np.sum(U, axis=0)
     return freqs_part
@@ -346,7 +347,8 @@ def one_freq(one_input_coordinate, C, COV, structure, k,
     D = np.array(D)
     # gc.collect()
     U = cl.partition_matrix(D, version='model')
-    U = (U ** 2) * density_integrals
+    #U = (U ** 2) * density_integrals
+    U = U * density_integrals
     # gc.collect()
     freq = np.sum(U, axis=0)
     return freq
