@@ -304,18 +304,16 @@ int CHyperTime::load(FILE* file)
 /*this is very DIRTY, but I don't see any other way*/
 int CHyperTime::exportToArray(double* array,int maxLen)
 {
-	save("hypertime.tmp");
+	memset(array,0,sizeof(double)*maxLen);
 	array[0] = TT_HYPER;
 	if (modelNegative->isTrained() && modelPositive->isTrained()){
-		FILE*  file = fopen("hypertime.tmpneg","r");
-		int len = fread(&array[5],1,maxLen,file);
-		fclose(file);	
-		array[1] = len;
-		file = fopen("hypertime.tmppos","r");
-		len = fread(&array[len+5],1,maxLen,file);
-		array[2] = len;
-		fclose(file);	
-		return array[1]+array[2]+5;
+		save("hypertime.tmp");
+		FILE*  file = fopen("hypertime.tmp","r");
+		int len = fread(&array[3],1,maxLen,file);
+		fclose(file);
+		array[1] = len/sizeof(double)+1;
+
+		return array[1]+3;
 	}else{
 		array[1] = 0;
 		array[2] = positives;
@@ -329,11 +327,8 @@ int CHyperTime::exportToArray(double* array,int maxLen)
 int CHyperTime::importFromArray(double* array,int len)
 {
 	if (array[1] > 0){
-		FILE*  file = fopen("hypertime.tmpneg","w");
-		fwrite(&array[5],1,array[1],file);
-		fclose(file);
-		file = fopen("hypertime.tmppos","w");
-		fwrite(&array[(int)array[1]+5],1,array[2],file);
+		FILE*  file = fopen("hypertime.tmp","w");
+		fwrite(&array[3],1,(array[1])*sizeof(double),file);
 		fclose(file);
 		load("hypertime.tmp");
 	}else{
