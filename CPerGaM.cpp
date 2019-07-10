@@ -52,10 +52,10 @@ int CPerGaM::add(uint32_t time,float state)
 void CPerGaM::update(int order,unsigned int* times,float* signal,int length)
 {
 	numElements = order;
-	float *input = (float*)calloc(numBins,sizeof(float));
-	float *refined = (float*)calloc(numBins,sizeof(float));
-	float *output = (float*)calloc(numBins,sizeof(float));
-	float *smooth = (float*)calloc(numBins,sizeof(float));
+	float *input = new float[numBins]();
+	float *refined = new float[numBins]();
+	float *output = new float[numBins]();
+	float *smooth = new float[numBins]();
 	offset = 0;
 	gain = 0;
 	//summarize over all days
@@ -89,15 +89,15 @@ void CPerGaM::update(int order,unsigned int* times,float* signal,int length)
 
 	//initialize Gaussianu
 
-	free(gaussian); 
+	delete[] gaussian;
 	int meanDistance = numBins/(numElements+1);
-	gaussian = (SPerGaM*) calloc(numElements,sizeof(SPerGaM));
+	gaussian = new SPerGaM[numElements]();
 	for (int i = 0;i<order;i++)
 	{
 	 	gaussian[i].mean = meanDistance*(i+1);
 	 	gaussian[i].weight = 1.0/numElements;
 	 	gaussian[i].sigma = numBins/numElements/2;
-	 	gaussian[i].estimate = (float*)calloc(numBins,sizeof(float));
+		gaussian[i].estimate = new float[numBins]();
 	}
 
 	//expectation step - calculate Gaussians
@@ -155,10 +155,10 @@ void CPerGaM::update(int order,unsigned int* times,float* signal,int length)
 //	printf("OFFSET %s %i %f %f\n",id,offset,gaussian[0].mean,gaussian[0].sigma);
 		
 //	for (int i=0;i<numBins;i++) printf("SUMAPIC: %s %f %f\n",id,input[i],estimate(i*60));
-	free(input);
-	free(refined);
-	free(smooth);
-	free(output);
+	delete[] input;
+	delete[] refined;
+	delete[] smooth;
+	delete[] output;
 //	print(false);
 	return;
 }
