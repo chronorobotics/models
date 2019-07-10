@@ -117,7 +117,7 @@ void CHyperTime::update(int modelOrder,unsigned int* times,float* signal,int len
 		/*retrieve dominant error period*/	
 		int maxOrder = 1;
 		fremen.update(timeDimension/2+1);
-		int period = fremen.predictFrelements[0].period;
+		int period = fremen.getPredictFrelements()[0].period;
 		bool expand = true;
 		fremen.print(true);
 		std::cout << "Model error with "<< timeDimension <<" time dimensions and "<< order <<" clusters is "<< sumErr << std::endl;
@@ -125,7 +125,7 @@ void CHyperTime::update(int modelOrder,unsigned int* times,float* signal,int len
 		/*if the period already exists, then skip it*/
 		for (int d = 0; d < timeDimension/2; d++)
 		{
-			if (period == periods[d]) period = fremen.predictFrelements[d+1].period;
+			if (period == periods[d]) period = fremen.getPredictFrelements()[d+1].period;
 		}
 		errors[timeDimension/2] = sumErr;
 

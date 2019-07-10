@@ -51,15 +51,17 @@ class CFrelement: public CTemporal
 		int save(const char* name,bool lossy = false);
 		int load(const char* name);
 		
+		inline SFrelement* getPredictFrelements() {
+			return predictFrelements;
+		}
+
+	private:
 		float storedGain;
 		SFrelement *storedFrelements;
 		int id;
 		float predictGain;
 		SFrelement *predictFrelements;
-		int measurements;
 		int shortestTime;
-		int64_t firstTime;
-		int64_t  lastTime;
 };
 
 #endif
