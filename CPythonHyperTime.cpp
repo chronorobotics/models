@@ -269,10 +269,10 @@ int CPythonHyperTime::load(const char* name)
 {
 
 	FILE* file = fopen(name,"r");
-	double *array = (double*)malloc(MAX_TEMPORAL_MODEL_SIZE*sizeof(double));
+	double* array = new double[MAX_TEMPORAL_MODEL_SIZE];
 	int len = fread(array,sizeof(double),MAX_TEMPORAL_MODEL_SIZE,file);
 	importFromArray(array,len);
-	free(array);
+	delete[] array;
 	fclose(file);
 	return 0;
 

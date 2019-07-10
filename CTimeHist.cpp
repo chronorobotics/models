@@ -19,9 +19,9 @@ void CTimeHist::init(int iMaxPeriod,int elements,int models)
 	maxPeriod = 86400;
 	numElements = elements;
 	numModels = models;
-	predictHistogram = (float*) malloc(sizeof(float)*numElements);	
-	storedHistogram = (float*) malloc(sizeof(float)*numElements);	
-	measurementsHistogram = (int*) malloc(sizeof(int)*numElements);	
+	predictHistogram = new float[numElements];
+	storedHistogram = new float[numElements];
+	measurementsHistogram = new int[numElements];
 	for (int i=0;i<numElements;i++){
 		predictHistogram[i] = 0.5; 
 		measurementsHistogram[i] = 0;
@@ -31,9 +31,9 @@ void CTimeHist::init(int iMaxPeriod,int elements,int models)
 
 CTimeHist::~CTimeHist()
 {
-	free(predictHistogram);
-	free(measurementsHistogram);
-	free(storedHistogram);
+	delete[] predictHistogram;
+	delete[] measurementsHistogram;
+	delete[] storedHistogram;
 }
 
 // adds new state observations at given times
@@ -106,19 +106,19 @@ int CTimeHist::load(const char* name)
 
 int CTimeHist::save(FILE* file,bool lossy)
 {
-	double *array = (double*)malloc(MAX_TEMPORAL_MODEL_SIZE*sizeof(double));
+	double *array = new double[MAX_TEMPORAL_MODEL_SIZE*sizeof(double)];
 	int len = exportToArray(array,MAX_TEMPORAL_MODEL_SIZE);
 	fwrite(array,sizeof(double),len,file);
-	free(array);
+	delete[] array;
 	return -1;
 }
 
 int CTimeHist::load(FILE* file)
 {
-	double *array = (double*)malloc(MAX_TEMPORAL_MODEL_SIZE*sizeof(double));
+	double *array = new double[MAX_TEMPORAL_MODEL_SIZE*sizeof(double)];
 	int len = fread(array,sizeof(double),MAX_TEMPORAL_MODEL_SIZE,file);
 	importFromArray(array,len);
-	free(array);
+	delete[] array;
 	return len;
 }
 
@@ -147,8 +147,8 @@ int CTimeHist::importFromArray(double* array,int len)
 	id = array[pos++];  
 	measurements = array[pos++]; 
  
-	free(storedHistogram);
-	free(measurementsHistogram);
+	delete[] storedHistogram;
+	delete[] measurementsHistogram;
 	init(maxPeriod,numElements,numModels);
 
 	for (int i = 0;i<numElements && pos < MAX_TEMPORAL_MODEL_SIZE;i++)storedHistogram[i]=array[pos++]; 

@@ -19,9 +19,9 @@ void CTimeAdaptiveHist::init(int imaxPeriod,int elements,int numActivities)
 		maxPeriod = imaxPeriod;
 		numElements = BINS_PER_DAY;
 		def_sample_threshold=elements;
-		predictHistogram = (float*) malloc(sizeof(float)*numElements);
-		storedHistogram = (float*) malloc(sizeof(float)*numElements);
-		measurementHistogram = (uint32_t*) malloc(sizeof(uint32_t)*numElements);
+		predictHistogram = new float[numElements];
+		storedHistogram = new float[numElements];
+		measurementHistogram = new uint32_t[numElements];
 		for (int i=0;i<numElements;i++)
 		{
 				measurementHistogram[i]=0;
@@ -31,8 +31,9 @@ void CTimeAdaptiveHist::init(int imaxPeriod,int elements,int numActivities)
 
 CTimeAdaptiveHist::~CTimeAdaptiveHist()
 {
-		free(predictHistogram);
-		free(storedHistogram);
+	delete[] predictHistogram;
+	delete[] storedHistogram;
+	delete[] measurementHistogram;
 }
 
 // adds new state observations at given times

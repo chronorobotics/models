@@ -22,8 +22,8 @@ void CPerGaM::init(int iMaxPeriod,int elements,int numActivities)
 {
 	maxPeriod = iMaxPeriod;
 	numElements = elements;
-	gaussian = (SPerGaM*) malloc(sizeof(SPerGaM)*numElements);	
-	storedHistogram = (float*) malloc(sizeof(float)*maxPeriod);	
+	gaussian = new SPerGaM[numElements];
+	storedHistogram = new float[maxPeriod];
 	for (int i=0;i<numElements;i++)
 	{
 		gaussian[i].mean = (i+0.5)*maxPeriod/elements;
@@ -36,7 +36,7 @@ void CPerGaM::init(int iMaxPeriod,int elements,int numActivities)
 
 CPerGaM::~CPerGaM()
 {
-	free(storedHistogram);
+	delete[] storedHistogram;
 }
 
 // adds new state observations at given times
@@ -265,17 +265,18 @@ int CPerGaM::load(const char* name)
 
 int CPerGaM::save(FILE* file,bool lossy)
 {
-	double *array = (double*)malloc(MAX_TEMPORAL_MODEL_SIZE*sizeof(double));
+	double* array = new double[MAX_TEMPORAL_MODEL_SIZE];
 	int len = exportToArray(array,MAX_TEMPORAL_MODEL_SIZE);
 	fwrite(array,sizeof(double),len,file);
+	delete[] array;
 	return 0;
 }
 
 int CPerGaM::load(FILE* file)
 {
-	double *array = (double*)malloc(MAX_TEMPORAL_MODEL_SIZE*sizeof(double));
+	double* array = new double [MAX_TEMPORAL_MODEL_SIZE];
 	int len = fread(array,sizeof(double),MAX_TEMPORAL_MODEL_SIZE,file);
 	importFromArray(array,len);
-	free(array);
+	delete [] array;
 	return 0;
 }

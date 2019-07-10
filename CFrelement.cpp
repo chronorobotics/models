@@ -26,16 +26,16 @@ void CFrelement::init(int iMaxPeriod,int elements,int numClasses)
 	maxPeriod = iMaxPeriod;
 	numElements = maxPeriod/3600/2;
 	numClasses = 0;
-	storedFrelements = (SFrelement*)malloc(sizeof(SFrelement)*numElements);
-	predictFrelements = (SFrelement*)malloc(sizeof(SFrelement)*numElements);
+	storedFrelements = new SFrelement[numElements];
+	predictFrelements = new SFrelement[numElements];
 	for (int i=0;i<numElements;i++) storedFrelements[i].amplitude = storedFrelements[i].phase = 0; 
 	for (int i=0;i<numElements;i++) storedFrelements[i].period = (maxPeriod)/(i+1); 
 }
 
 CFrelement::~CFrelement()
 {
-	free(storedFrelements);
-	free(predictFrelements);
+	delete[] storedFrelements;
+	delete[] predictFrelements;
 }
 
 // adds new state observations at given times
@@ -212,10 +212,10 @@ int CFrelement::exportToArray(double* array,int maxLen)
 int CFrelement::load(const char* name)
 {
 	FILE* file = fopen(name,"r");
-	double *array = (double*)malloc(MAX_TEMPORAL_MODEL_SIZE*sizeof(double));
+	double* array = new double [MAX_TEMPORAL_MODEL_SIZE];
 	int len = fread(array,sizeof(double),MAX_TEMPORAL_MODEL_SIZE,file);
 	importFromArray(array,len);
-	free(array);
+	delete [] array;
 	fclose(file);
 	return 0;
 }
