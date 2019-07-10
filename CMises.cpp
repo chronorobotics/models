@@ -129,24 +129,49 @@ float CMises::predict(uint32_t time)
 
 int CMises::save(const char* name,bool lossy)
 {
-	FILE* file = fopen(name,"w");
+	FileStorage fsp(name, FileStorage::WRITE);
+
+	cvStartWriteStruct(*fsp, "ModelPositive", CV_NODE_MAP);
+	modelPositive->write(fsp);
+	printf("saving positive\n");
+	cvEndWriteStruct(*fsp);
+
+	cvStartWriteStruct(*fsp, "ModelNegative", CV_NODE_MAP);
+	modelNegative->write(fsp);
+	printf("saving negative\n");
+	cvEndWriteStruct(*fsp);
+
+	fsp.release();
+
+	/*FILE* file = fopen(name,"w");
 	save(file);
-	fclose(file);
+	fclose(file);*/
 	return 0;
 }
 
 int CMises::load(const char* name)
 {
-	FILE* file = fopen(name,"r");
+	FileStorage fs(name, FileStorage::READ);
+	if (modelPositive.empty()) {
+		modelPositive = EM::create();
+	}
+	if (modelNegative.empty()) {
+		modelNegative = EM::create();
+	}
+	modelPositive->read(fs["ModelPositive"]);
+	modelNegative->read(fs["ModelNegative"]);
+	fs.release();
+
+	/*FILE* file = fopen(name,"r");
 	load(file);
-	fclose(file);
+	fclose(file);*/
 	return 0;
 }
 
 
 int CMises::save(FILE* file,bool lossy)
 {
-//	int frk = numElements;
+	//	int frk = numElements;
 //	fwrite(&frk,sizeof(uint32_t),1,file);
 //	fwrite(&storedGain,sizeof(float),1,file);
 //	fwrite(storedFrelements,sizeof(SFrelement),numElements,file);
@@ -155,19 +180,32 @@ int CMises::save(FILE* file,bool lossy)
 
 int CMises::load(FILE* file)
 {
-//	int frk = numElements;
 //	fwrite(&frk,sizeof(uint32_t),1,file);
 //	fwrite(&storedGain,sizeof(float),1,file);
 //	fwrite(storedFrelements,sizeof(SFrelement),numElements,file);
 	return 0;
 }
 
+/*this is very DIRTY, but I don't see any other way*/
 int CMises::exportToArray(double* array,int maxLen)
 {
-return 0;
+	memset(array,0,sizeof(double)*maxLen);
+	array[0] = TT_MISES;
+	save("mises.tmp");
+	FILE*  file = fopen("mises.tmp","r");
+	int len = fread(&array[3],1,maxLen,file);
+	fclose(file);
+	array[1] = len/sizeof(double)+1;
+
+	return array[1]+3;
 }
 
+/*this is very DIRTY, but I don't see any other way*/
 int CMises::importFromArray(double* array,int len)
 {
-return 0;
+	FILE* file = fopen("mises.tmp","w");
+	fwrite(&array[3],1,(array[1])*sizeof(double),file);
+	fclose(file);
+	load("mises.tmp");
+	return 0;
 }
