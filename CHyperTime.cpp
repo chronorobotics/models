@@ -326,19 +326,9 @@ int CHyperTime::importFromArray(double* array,int len)
 		positives = array[2];
 		negatives = array[3];
 		order = array[4];
-				delete modelPositive;
-				delete modelNegative;
-//	 modelPositive->release();
-//	 modelNegative->release();
-	if (modelPositive == NULL) modelPositive = EM::create();
-	if (modelNegative == NULL) modelNegative = EM::create();
-	modelPositive->setClustersNumber(order);
-	modelNegative->setClustersNumber(order);
-	modelPositive->setCovarianceMatrixType(covarianceType);
-	modelNegative->setCovarianceMatrixType(covarianceType);
-
-
-
+		modelPositive.release();
+		modelNegative.release();
+		reinit_models_if_null();
 	}
 	return 0;
 }
