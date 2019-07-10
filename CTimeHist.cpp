@@ -62,10 +62,10 @@ void CTimeHist::print(bool verbose)
 {
 	std::cout << "Model " << id << " Size: " << measurements << " " << " Bins: " << numElements << " ";
 	if (verbose){
-		printf("Bin values: "); 
-		for (int i = 0;i<numElements;i++) printf("%.3f ",storedHistogram[i]);
+		std::cout << "Bin values: ";
+		for (int i = 0;i<numElements;i++) std::cout << storedHistogram[i] << " ";
 	}
-	printf("\n"); 
+	std::cout << std::endl;
 }
 
 float CTimeHist::estimate(uint32_t time)
@@ -133,7 +133,7 @@ int CTimeHist::exportToArray(double* array,int maxLen)
 	for (int i = 0;i<numElements && pos < MAX_TEMPORAL_MODEL_SIZE;i++) array[pos++] = (double)storedHistogram[i];
 	for (int i = 0;i<numElements && pos < MAX_TEMPORAL_MODEL_SIZE;i++) array[pos++] = (double)measurementsHistogram[i];
 
-	if (pos == MAX_TEMPORAL_MODEL_SIZE) fprintf(stdout,"Could not save the model dur to its size\n");
+	if (pos == MAX_TEMPORAL_MODEL_SIZE) std::cout << "Could not save the model dur to its size" << std::endl;
 	return pos;
 }
 
@@ -141,7 +141,7 @@ int CTimeHist::importFromArray(double* array,int len)
 {
 	int pos = 0;
 	type = (ETemporalType)array[pos++];
-	if (type != TT_HISTOGRAM) fprintf(stderr,"Error loading the model, type mismatch.\n");
+	if (type != TT_HISTOGRAM) std::cerr << "Error loading the model, type mismatch." << std::endl;
 	numElements = array[pos++];
 	numModels = array[pos++];
 	id = array[pos++];  
@@ -154,6 +154,6 @@ int CTimeHist::importFromArray(double* array,int len)
 	for (int i = 0;i<numElements && pos < MAX_TEMPORAL_MODEL_SIZE;i++)storedHistogram[i]=array[pos++]; 
 	for (int i = 0;i<numElements && pos < MAX_TEMPORAL_MODEL_SIZE;i++)measurementsHistogram[i]=array[pos++]; 
 	update(numElements);
-	if (pos == MAX_TEMPORAL_MODEL_SIZE) fprintf(stdout,"Model was not properly saved before.\n");
+	if (pos == MAX_TEMPORAL_MODEL_SIZE) std::cout << "Model was not properly saved before." << std::endl;
 	return pos;
 }

@@ -165,7 +165,7 @@ int CFrelement::importFromArray(double* array,int len)
 {
 	int pos = 0;
 	type = (ETemporalType)array[pos++];
-	if (type != TT_FREMEN) fprintf(stderr,"Error loading the model, type mismatch.\n");
+	if (type != TT_FREMEN) std::cout << "Error loading the model, type mismatch." << std::endl;
 	order = array[pos++];        
 	id = array[pos++];
 	storedGain = array[pos++];

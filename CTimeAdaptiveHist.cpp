@@ -59,10 +59,10 @@ void CTimeAdaptiveHist::print(bool verbose)
 {
 		std::cout << "Model " << id << " Size: " << measurements << " ";
 		if (verbose){
-				printf("Bin values: ");
-				for (int i = 0;i<numElements;i++) printf("%.3f ",storedHistogram[i]);
+				std::cout << "Bin values: " << std::endl;
+				for (int i = 0;i<numElements;i++) std::cout << storedHistogram[i] << " ";
 		}
-		printf("\n");
+		std::cout << std::endl;
 }
 
 float CTimeAdaptiveHist::estimate(uint32_t time)
@@ -137,7 +137,7 @@ int CTimeAdaptiveHist::exportToArray(double* array,int maxLen)
 	for (int i = 0;i<numElements && pos < MAX_TEMPORAL_MODEL_SIZE;i++) array[pos++] = storedHistogram[i];
 	for (int i = 0;i<numElements && pos < MAX_TEMPORAL_MODEL_SIZE;i++) array[pos++] = measurementHistogram[i];
 
-	if (pos == MAX_TEMPORAL_MODEL_SIZE) fprintf(stdout,"Could not save the model dur to its size\n");
+	if (pos == MAX_TEMPORAL_MODEL_SIZE) std::cout << "Could not save the model dur to its size" << std::endl;
 	return pos;
 }
 
@@ -146,7 +146,7 @@ int CTimeAdaptiveHist::importFromArray(double* array,int len)
 	int pos = 0;
 	type = (ETemporalType)array[pos++];
 	numElements = array[pos++];
-	if (type != TT_ADAPTIVE) fprintf(stderr,"Error loading the model, type mismatch.\n");
+	if (type != TT_ADAPTIVE) std::cerr << "Error loading the model, type mismatch." << std::endl;
 	id = array[pos++];
 	def_sample_threshold = array[pos++];
 	measurements = array[pos++];
@@ -154,6 +154,6 @@ int CTimeAdaptiveHist::importFromArray(double* array,int len)
 	for (int i = 0;i<numElements && pos < MAX_TEMPORAL_MODEL_SIZE;i++)storedHistogram[i]=array[pos++];
 	for (int i = 0;i<numElements && pos < MAX_TEMPORAL_MODEL_SIZE;i++)measurementHistogram[i]=array[pos++];
 
-	if (pos == MAX_TEMPORAL_MODEL_SIZE) fprintf(stdout,"Model was not properly saved before.\n");
+	if (pos == MAX_TEMPORAL_MODEL_SIZE) std::cout << "Model was not properly saved before." << std::endl;
 	return pos;
 }

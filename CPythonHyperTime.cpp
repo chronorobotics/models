@@ -234,7 +234,7 @@ int CPythonHyperTime::save(const char* name,bool lossy)
 	FILE* file = fopen(name,"w");
 	double array[10000];
 	int len = exportToArray(array,10000);
-	printf("Saved model with %i\n",len);
+	std::cout << "Saved model with " << len << std::endl;
 	fwrite(array,sizeof(double),len,file);
 	fclose(file);
 	return 0;

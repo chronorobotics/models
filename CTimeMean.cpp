@@ -47,10 +47,10 @@ void CTimeMean::print(bool verbose)
 {
 	std::cout << "Model " << id << " Size: " << measurements << " ";
 	if (verbose){
-		printf("Mean: "); 
-		printf("%.3f ",positive/measurements);
+		std::cout << "Mean: ";
+		std::cout << (positive/measurements);
 	}
-	printf("\n"); 
+	std::cout << std::endl;
 }
 
 float CTimeMean::estimate(uint32_t time)
@@ -118,7 +118,7 @@ int CTimeMean::importFromArray(double* array,int len)
 {
 	int pos = 0;
 	type = (ETemporalType)array[pos++];
-	if (type != TT_MEAN) fprintf(stderr,"Error loading the model, type mismatch.\n");
+	if (type != TT_MEAN) std::cerr << "Error loading the model, type mismatch." << std::endl;
 	positive = array[pos++];
 	id = array[pos++];  
 	measurements = array[pos++];

@@ -36,7 +36,7 @@ void CTimeNone::update(int modelOrder,unsigned int* times,float* signal,int leng
 void CTimeNone::print(bool verbose)
 {
 	std::cout << "Model " << id << " Size: " << measurements << " ";
-	if (verbose) printf("Value: %.3f \n",estimation); 
+	if (verbose) std::cout << "Value: "<< estimation << std::endl;
 }
 
 float CTimeNone::estimate(uint32_t time)
@@ -91,7 +91,7 @@ int CTimeNone::importFromArray(double* array,int len)
 {
 	int pos = 0;
 	type = (ETemporalType)array[pos++];
-	if (type != TT_NONE) fprintf(stderr,"Error loading the model, type mismatch.\n");
+	if (type != TT_NONE) std::cerr << "Error loading the model, type mismatch." << std::endl;
 	estimation = array[pos++];
 	id = array[pos++];  
 	measurements = array[pos++]; 
