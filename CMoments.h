@@ -51,6 +51,11 @@ class CMoments: public CTemporal
 				double moment1_im;
 		};
 
+		typedef struct{
+			long int t;
+			float v;
+		}STimeSample;
+
 		double pos_sum1_re;
 		double pos_sum1_im;
 		double neg_sum1_re;
@@ -60,6 +65,9 @@ class CMoments: public CTemporal
 		double pos_mu;
 		double neg_kappa;
 		double neg_mu;
+
+		STimeSample sampleArray[1000000];
+		int numSamples;
 
 		static int moment_f(const gsl_vector* x, void* params, gsl_vector* f);
 };
