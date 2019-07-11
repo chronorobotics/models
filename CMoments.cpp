@@ -1,4 +1,6 @@
 #include <gsl/gsl_sf_bessel.h>
+#include <iostream>
+#include <fstream>
 #include "CMoments.h"
 
 using namespace std;
@@ -14,6 +16,8 @@ CMoments::CMoments(int idd)
 	neg_sum1_im = 0;
 	positives = 0;
 	negatives = 0;
+
+	numSamples = 0;
 }
 
 void CMoments::init(int iMaxPeriod,int elements,int numClasses)
@@ -29,6 +33,10 @@ CMoments::~CMoments()
 // adds new state observations at given times
 int CMoments::add(uint32_t time,float state)
 {
+	sampleArray[numSamples].t = time;
+	sampleArray[numSamples].v = state;
+	numSamples++;
+
 	float phase = fmodf(time, 86400.0f) / 86400;
 	if (phase > 0.5) {
 		phase -= 1;
@@ -74,7 +82,7 @@ void CMoments::update(int modelOrder, unsigned int* times, float* signal, int le
 	neg_rs.moment1_im = neg_sum1_im / negatives;
 
 	std::cout << "positive:"<< positives <<" re="<< pos_rs.moment1_re <<" im="<< pos_rs.moment1_im << std::endl;
-	std::cout << "negative:"<< negatives <<" re="<< neg_rs.moment1_re <<" im="<< neg_rs.moment1_re << std::endl;
+	std::cout << "negative:"<< negatives <<" re="<< neg_rs.moment1_re <<" im="<< neg_rs.moment1_im << std::endl;
 
 	int status;
 	int iter = 0;
@@ -106,7 +114,7 @@ void CMoments::update(int modelOrder, unsigned int* times, float* signal, int le
 
 	printf ("status = %s\n", gsl_strerror (status));
 	pos_kappa = gsl_vector_get (s1->x, 0);
-	pos_mu = gsl_vector_get (s1->x, 0);
+	pos_mu = gsl_vector_get (s1->x, 0) + M_PI_2;
 
 	gsl_multiroot_fsolver_free(s1);
 
@@ -129,10 +137,19 @@ void CMoments::update(int modelOrder, unsigned int* times, float* signal, int le
 
 	printf ("status = %s\n", gsl_strerror (status));
 	neg_kappa = gsl_vector_get (s2->x, 0);
-	neg_mu = gsl_vector_get (s2->x, 0);
+	neg_mu = gsl_vector_get (s2->x, 0) + M_PI_2;
 
 	gsl_multiroot_fsolver_free(s2);
 	gsl_vector_free(x);
+
+	ofstream myfile0("0.txt");
+	ofstream myfile1("1.txt");
+	for (int i = 0; i < numSamples; ++i) {
+		myfile0 << sampleArray[i].v << std::endl;
+		myfile1 << predict(sampleArray[i].t) << std::endl;
+	}
+	myfile0.close();
+	myfile1.close();
 }
 
 /*text representation of the fremen model*/
@@ -157,6 +174,7 @@ float CMoments::estimate(uint32_t time)
 	float neg_density = exp(neg_kappa * cos(phase - neg_mu)) / (2 * M_PI * gsl_sf_bessel_I0(neg_kappa));
 
 	return pos_density / (pos_density + neg_density);
+	//return pos_density;
 }
 
 float CMoments::predict(uint32_t time)
