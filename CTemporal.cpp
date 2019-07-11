@@ -7,6 +7,7 @@
 //#include "CMises.h"
 #include "CPythonHyperTime.h"
 #include "CHyperTime.h"
+#include "CMoments.h"
 
 const char *temporalModelName[] = 
 {
@@ -19,6 +20,7 @@ const char *temporalModelName[] =
 	"Gaussian",
 	"Adaptive",
 	"VonMises",
+	"HyT-MM",
 	"Number"
 };
 
@@ -38,8 +40,10 @@ CTemporal* spawnTemporalModel(ETemporalType type,int maxPeriod,int elements,int 
 		case TT_PERGAM: 	temporalModel = new CPerGaM(0);			break;
 		case TT_ADAPTIVE: 	temporalModel = new CTimeAdaptiveHist(0);	break;
 //		case TT_MISES: 		temporalModel = new CMises(0);			break;
+		case TT_MOMENTS:	temporalModel = new CMoments(0);	break;
 		default: 		temporalModel = new CTimeNone(0);
 	}
+
 	temporalModel->init(maxPeriod,elements,numClasses);
 	return temporalModel;
 }

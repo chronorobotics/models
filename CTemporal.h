@@ -26,6 +26,7 @@ typedef enum{
 	TT_PERGAM,
 	TT_ADAPTIVE,
 	TT_MISES,
+	TT_MOMENTS,
 	TT_NUMBER
 }ETemporalType;
 
