@@ -29,11 +29,11 @@ CMoments::~CMoments()
 // adds new state observations at given times
 int CMoments::add(uint32_t time,float state)
 {
-	float phase = time / 86400;
+	float phase = fmodf(time, 86400.0f) / 86400;
 	if (phase > 0.5) {
 		phase -= 1;
 	}
-	phase *= M_PI;
+	phase *= M_PI * 2;
 
 	if (state > 0.5) {
 		pos_sum1_re += cos(phase);
@@ -72,6 +72,9 @@ void CMoments::update(int modelOrder, unsigned int* times, float* signal, int le
 	pos_rs.moment1_im = pos_sum1_im / positives;
 	neg_rs.moment1_re = neg_sum1_re / negatives;
 	neg_rs.moment1_im = neg_sum1_im / negatives;
+
+	std::cout << "positive:"<< positives <<" re="<< pos_rs.moment1_re <<" im="<< pos_rs.moment1_im << std::endl;
+	std::cout << "negative:"<< negatives <<" re="<< neg_rs.moment1_re <<" im="<< neg_rs.moment1_re << std::endl;
 
 	int status;
 	int iter = 0;
@@ -144,11 +147,11 @@ void CMoments::print(bool verbose)
 
 float CMoments::estimate(uint32_t time)
 {
-	float phase = time / 86400;
+	float phase = fmodf(time, 86400.0f) / 86400;
 	if (phase > 0.5) {
 		phase -= 1;
 	}
-	phase *= M_PI;
+	phase *= M_PI * 2;
 
 	float pos_density = exp(pos_kappa * cos(phase - pos_mu)) / (2 * M_PI * gsl_sf_bessel_I0(pos_kappa));
 	float neg_density = exp(neg_kappa * cos(phase - neg_mu)) / (2 * M_PI * gsl_sf_bessel_I0(neg_kappa));
@@ -200,9 +203,10 @@ int CMoments::exportToArray(double* array, int maxLen)
 {
 	int pos = 0;
 	array[pos++] = type;
-	array[pos++] = estimation;
-	array[pos++] = id;
-	array[pos++] = measurements;
+	array[pos++] = pos_kappa;
+	array[pos++] = pos_mu;
+	array[pos++] = neg_kappa;
+	array[pos++] = neg_mu;
 	return pos;
 }
 
@@ -211,8 +215,9 @@ int CMoments::importFromArray(double* array, int len)
 	int pos = 0;
 	type = (ETemporalType)array[pos++];
 	if (type != TT_NONE) std::cerr << "Error loading the model, type mismatch." << std::endl;
-	estimation = array[pos++];
-	id = array[pos++];  
-	measurements = array[pos++]; 
+	pos_kappa = array[pos++];
+	pos_mu = array[pos++];
+	neg_kappa = array[pos++];
+	neg_mu = array[pos++];
 	return pos;
 }
