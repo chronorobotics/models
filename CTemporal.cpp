@@ -8,6 +8,7 @@
 #include "CPythonHyperTime.h"
 #include "CHyperTime.h"
 #include "CExpectation.h"
+#include "CMoments.h"
 
 const char *temporalModelName[] = 
 {
@@ -21,6 +22,7 @@ const char *temporalModelName[] =
 	"Adaptive",
 	"VonMises",
 	"HyT-CEM",
+	"HyT-MM",
 	"Number",
 };
 
@@ -41,6 +43,7 @@ CTemporal* spawnTemporalModel(ETemporalType type,int maxPeriod,int elements,int 
 		case TT_ADAPTIVE: 	temporalModel = new CTimeAdaptiveHist(0);	break;
 //		case TT_MISES: 		temporalModel = new CMises(0);			break;
 		case TT_EXPECTATION:	temporalModel = new CExpectation(elements); break;
+		case TT_MOMENTS:	temporalModel = new CMoments(0);	break;
 		default: 		temporalModel = new CTimeNone(0);
 	}
 	temporalModel->init(maxPeriod,elements,numClasses);
