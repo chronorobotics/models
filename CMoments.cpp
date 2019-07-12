@@ -10,12 +10,6 @@ CMoments::CMoments(int idd)
 	id=idd;
 	measurements = 0;
 	type = TT_MOMENTS;
-	pos_sum1_re = 0;
-	pos_sum1_im = 0;
-	neg_sum1_re = 0;
-	neg_sum1_im = 0;
-	positives = 0;
-	negatives = 0;
 
 	numSamples = 0;
 }
@@ -30,27 +24,121 @@ CMoments::~CMoments()
 {
 }
 
-// adds new state observations at given times
-int CMoments::add(uint32_t time,float state)
+CMoments::RightSide::RightSide() :
+	moment1_re(),
+	moment1_im()
 {
-	sampleArray[numSamples].t = time;
-	sampleArray[numSamples].v = state;
-	numSamples++;
+}
 
+CMoments::RightSide::RightSide(double moment1_re_, double moment1_im_) :
+	moment1_re(moment1_re_),
+	moment1_im(moment1_im_)
+{
+}
+
+CMoments::TimeSample::TimeSample() :
+	t(),
+	v()
+{
+}
+
+CMoments::TimeSample::TimeSample(long t_, float v_) :
+	t(t_),
+	v(v_)
+{
+}
+
+CMoments::DensityParams::DensityParams() :
+	kappa(),
+	mu()
+{
+}
+
+CMoments::DensityParams::DensityParams(double kappa_, double mu_) :
+	kappa(kappa_),
+	mu(mu_)
+{
+}
+
+CMoments::DensityParams::DensityParams(RightSide& rs) :
+	kappa(),
+	mu()
+{
+	int status;
+	int iter = 0;
+
+	const size_t n = 2;
+	gsl_multiroot_function f = {&CMoments::moment_f, n, &rs};
+
+	gsl_vector *x = gsl_vector_alloc(n);
+	gsl_vector_set(x, 0, 1.86435);
+	gsl_vector_set(x, 1, 1.35135);
+
+	gsl_multiroot_fsolver* s = gsl_multiroot_fsolver_alloc (gsl_multiroot_fsolver_hybrids, 2);
+	gsl_multiroot_fsolver_set (s, &f, x);
+
+	do
+	{
+		iter++;
+		status = gsl_multiroot_fsolver_iterate(s);
+
+		std::cout << "iter "<< iter <<": kappa = "<< gsl_vector_get (s->x, 0) <<", mu = "<< gsl_vector_get (s->x, 1) << std::endl;
+
+		if (status) {   /* check if solver is stuck */
+			break;
+		}
+
+		status = gsl_multiroot_test_residual (s->f, 1e-7);
+	}	while (status == GSL_CONTINUE && iter < 1000);
+
+	printf ("status = %s\n", gsl_strerror (status));
+	kappa = gsl_vector_get (s->x, 0);
+	mu = gsl_vector_get (s->x, 0) + M_PI_2;
+
+	gsl_multiroot_fsolver_free(s);
+}
+
+double CMoments::DensityParams::density_at(double phase) {
+	return exp(kappa * cos(phase - mu)) / (2 * M_PI * gsl_sf_bessel_I0(kappa));
+}
+
+CMoments::MomentEstimator::MomentEstimator() :
+	sum1_re(),
+	sum1_im(),
+	count()
+{
+}
+
+void CMoments::MomentEstimator::add_point(double phase) {
+	sum1_re += cos(phase);
+	sum1_im += sin(phase);
+	count++;
+}
+
+CMoments::RightSide CMoments::MomentEstimator::estimate_moments() {
+	return RightSide(sum1_re / count, sum1_im / count);
+}
+
+double CMoments::time_to_phase(uint32_t time) {
 	float phase = fmodf(time, 86400.0f) / 86400;
 	if (phase > 0.5) {
 		phase -= 1;
 	}
-	phase *= M_PI * 2;
+	return phase * M_PI * 2;
+}
+
+// adds new state observations at given times
+int CMoments::add(uint32_t time,float state)
+{
+	sampleArray[numSamples] = TimeSample(time, state);
+	numSamples++;
+
+	float phase = time_to_phase(time);
 
 	if (state > 0.5) {
-		pos_sum1_re += cos(phase);
-		pos_sum1_im += sin(phase);
-		positives++;
+		pos_estimator.add_point(phase);
 	} else {
-		neg_sum1_re += cos(phase);
-		neg_sum1_im += sin(phase);
-		negatives++;
+		neg_estimator.add_point(phase);
 	}
 	measurements++;
 	return 0;
@@ -75,72 +163,11 @@ int CMoments::moment_f(const gsl_vector* x, void* params, gsl_vector* f) {
 
 void CMoments::update(int modelOrder, unsigned int* times, float* signal, int length)
 {
-	RightSide pos_rs, neg_rs;
-	pos_rs.moment1_re = pos_sum1_re / positives;
-	pos_rs.moment1_im = pos_sum1_im / positives;
-	neg_rs.moment1_re = neg_sum1_re / negatives;
-	neg_rs.moment1_im = neg_sum1_im / negatives;
+	RightSide pos_rs = pos_estimator.estimate_moments();
+	RightSide neg_rs = neg_estimator.estimate_moments();
 
-	std::cout << "positive:"<< positives <<" re="<< pos_rs.moment1_re <<" im="<< pos_rs.moment1_im << std::endl;
-	std::cout << "negative:"<< negatives <<" re="<< neg_rs.moment1_re <<" im="<< neg_rs.moment1_im << std::endl;
-
-	int status;
-	int iter = 0;
-
-	const size_t n = 2;
-	gsl_multiroot_function f_pos = {&moment_f, n, &pos_rs};
-	gsl_multiroot_function f_neg = {&moment_f, n, &neg_rs};
-
-	gsl_vector *x = gsl_vector_alloc(n);
-	gsl_vector_set(x, 0, 1.86435);
-	gsl_vector_set(x, 1, 1.35135);
-
-	gsl_multiroot_fsolver* s1 = gsl_multiroot_fsolver_alloc (gsl_multiroot_fsolver_hybrids, 2);
-	gsl_multiroot_fsolver_set (s1, &f_pos, x);
-
-	do
-	{
-		iter++;
-		status = gsl_multiroot_fsolver_iterate(s1);
-
-		std::cout << "iter "<< iter <<": kappa = "<< gsl_vector_get (s1->x, 0) <<", mu = "<< gsl_vector_get (s1->x, 1) << std::endl;
-
-		if (status) {   /* check if solver is stuck */
-			break;
-		}
-
-		status = gsl_multiroot_test_residual (s1->f, 1e-7);
-	}	while (status == GSL_CONTINUE && iter < 1000);
-
-	printf ("status = %s\n", gsl_strerror (status));
-	pos_kappa = gsl_vector_get (s1->x, 0);
-	pos_mu = gsl_vector_get (s1->x, 0) + M_PI_2;
-
-	gsl_multiroot_fsolver_free(s1);
-
-	gsl_multiroot_fsolver* s2 = gsl_multiroot_fsolver_alloc (gsl_multiroot_fsolver_hybrids, 2);
-	gsl_multiroot_fsolver_set (s2, &f_neg, x);
-
-	do
-	{
-		iter++;
-		status = gsl_multiroot_fsolver_iterate(s2);
-
-		std::cout << "iter "<< iter <<": kappa = "<< gsl_vector_get (s2->x, 0) <<", mu = "<< gsl_vector_get (s2->x, 1) << std::endl;
-
-		if (status) {   /* check if solver is stuck */
-			break;
-		}
-
-		status =gsl_multiroot_test_residual (s2->f, 1e-7);
-	}	while (status == GSL_CONTINUE && iter < 1000);
-
-	printf ("status = %s\n", gsl_strerror (status));
-	neg_kappa = gsl_vector_get (s2->x, 0);
-	neg_mu = gsl_vector_get (s2->x, 0) + M_PI_2;
-
-	gsl_multiroot_fsolver_free(s2);
-	gsl_vector_free(x);
+	pos_density = DensityParams(pos_rs);
+	neg_density = DensityParams(neg_rs);
 
 	ofstream myfile0("0.txt");
 	ofstream myfile1("1.txt");
@@ -157,24 +184,20 @@ void CMoments::print(bool verbose)
 {
 	std::cout << "Model " << id << " Size: " << measurements << " " << std::endl;
 	if (verbose) {
-		std::cout << "positive: k="<< pos_kappa <<" m="<< pos_mu << std::endl;
-		std::cout << "negative: k="<< neg_kappa <<" m="<< neg_mu << std::endl;
+		std::cout << "positive: k="<< pos_density.kappa <<" m="<< pos_density.mu << std::endl;
+		std::cout << "negative: k="<< neg_density.kappa <<" m="<< neg_density.mu << std::endl;
 	}
 }
 
 float CMoments::estimate(uint32_t time)
 {
-	float phase = fmodf(time, 86400.0f) / 86400;
-	if (phase > 0.5) {
-		phase -= 1;
-	}
-	phase *= M_PI * 2;
+	float phase = time_to_phase(time);
 
-	float pos_density = exp(pos_kappa * cos(phase - pos_mu)) / (2 * M_PI * gsl_sf_bessel_I0(pos_kappa));
-	float neg_density = exp(neg_kappa * cos(phase - neg_mu)) / (2 * M_PI * gsl_sf_bessel_I0(neg_kappa));
+	float pd = pos_density.density_at(phase);
+	float nd = neg_density.density_at(phase);
 
-	return pos_density / (pos_density + neg_density);
-	//return pos_density;
+	return pd / (pd + nd);
+	//return pd;
 }
 
 float CMoments::predict(uint32_t time)
@@ -200,19 +223,19 @@ int CMoments::load(const char* name)
 
 int CMoments::save(FILE* file,bool lossy)
 {
-	fwrite(&pos_kappa, sizeof(double), 1, file);
-	fwrite(&pos_mu, sizeof(double), 1, file);
-	fwrite(&neg_kappa, sizeof(double), 1, file);
-	fwrite(&neg_mu, sizeof(double), 1, file);
+	fwrite(&pos_density.kappa, sizeof(double), 1, file);
+	fwrite(&pos_density.mu, sizeof(double), 1, file);
+	fwrite(&neg_density.kappa, sizeof(double), 1, file);
+	fwrite(&neg_density.mu, sizeof(double), 1, file);
 	return 0;
 }
 
 int CMoments::load(FILE* file)
 {
-	fread(&pos_kappa, sizeof(double), 1, file);
-	fread(&pos_mu, sizeof(double), 1, file);
-	fread(&neg_kappa, sizeof(double), 1, file);
-	fread(&neg_mu, sizeof(double), 1, file);
+	fread(&pos_density.kappa, sizeof(double), 1, file);
+	fread(&pos_density.mu, sizeof(double), 1, file);
+	fread(&neg_density.kappa, sizeof(double), 1, file);
+	fread(&neg_density.mu, sizeof(double), 1, file);
 	return 0;
 }
 
@@ -221,10 +244,10 @@ int CMoments::exportToArray(double* array, int maxLen)
 {
 	int pos = 0;
 	array[pos++] = type;
-	array[pos++] = pos_kappa;
-	array[pos++] = pos_mu;
-	array[pos++] = neg_kappa;
-	array[pos++] = neg_mu;
+	array[pos++] = pos_density.kappa;
+	array[pos++] = pos_density.mu;
+	array[pos++] = neg_density.kappa;
+	array[pos++] = neg_density.mu;
 	return pos;
 }
 
@@ -233,9 +256,9 @@ int CMoments::importFromArray(double* array, int len)
 	int pos = 0;
 	type = (ETemporalType)array[pos++];
 	if (type != TT_NONE) std::cerr << "Error loading the model, type mismatch." << std::endl;
-	pos_kappa = array[pos++];
-	pos_mu = array[pos++];
-	neg_kappa = array[pos++];
-	neg_mu = array[pos++];
+	pos_density.kappa = array[pos++];
+	pos_density.mu = array[pos++];
+	neg_density.kappa = array[pos++];
+	neg_density.mu = array[pos++];
 	return pos;
 }

@@ -44,30 +44,53 @@ class CMoments: public CTemporal
 	private:
 		int id;
 		float estimation;
-		int positives, negatives;
 
-		struct RightSide {
+		class RightSide {
+			public:
+				RightSide();
+				RightSide(double moment1_re_, double moment1_im_);
 				double moment1_re;
 				double moment1_im;
 		};
 
-		typedef struct{
-			long int t;
-			float v;
-		}STimeSample;
+		class TimeSample {
+			public:
+				TimeSample();
+				TimeSample(long int t_, float v_);
+				long int t;
+				float v;
+		};
 
-		double pos_sum1_re;
-		double pos_sum1_im;
-		double neg_sum1_re;
-		double neg_sum1_im;
+		class DensityParams {
+			public:
+				DensityParams();
+				DensityParams(double kappa_, double mu_);
+				DensityParams(RightSide& rs);
+				double kappa;
+				double mu;
 
-		double pos_kappa;
-		double pos_mu;
-		double neg_kappa;
-		double neg_mu;
+				double density_at(double phase);
+		};
 
-		STimeSample sampleArray[1000000];
+		class MomentEstimator {
+			public:
+				MomentEstimator();
+				double sum1_re;
+				double sum1_im;
+				int count;
+
+				void add_point(double phase);
+				RightSide estimate_moments();
+		};
+
+		MomentEstimator pos_estimator;
+		MomentEstimator neg_estimator;
+		DensityParams pos_density;
+		DensityParams neg_density;
+
+		TimeSample sampleArray[1000000];
 		int numSamples;
+		double time_to_phase(uint32_t time);
 
 		static int moment_f(const gsl_vector* x, void* params, gsl_vector* f);
 };
