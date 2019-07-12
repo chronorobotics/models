@@ -44,13 +44,27 @@ class CMoments: public CTemporal
 	private:
 		int id;
 		float estimation;
+		static const int moment_count = 3;
+
+		class MomentEstimator {
+			public:
+				MomentEstimator();
+				~MomentEstimator();
+				double* sum_re;
+				double* sum_im;
+				int count;
+
+				void add_point(double phase);
+		};
 
 		class RightSide {
 			public:
 				RightSide();
-				RightSide(double moment1_re_, double moment1_im_);
-				double moment1_re;
-				double moment1_im;
+				RightSide(const MomentEstimator& me);
+				~RightSide();
+				double* moment_re;
+				double* moment_im;
+				int count;
 		};
 
 		class TimeSample {
@@ -63,24 +77,16 @@ class CMoments: public CTemporal
 
 		class DensityParams {
 			public:
-				DensityParams();
-				DensityParams(double kappa_, double mu_);
+				DensityParams(int count = 0);
 				DensityParams(RightSide& rs);
-				double kappa;
-				double mu;
-
-				double density_at(double phase);
-		};
-
-		class MomentEstimator {
-			public:
-				MomentEstimator();
-				double sum1_re;
-				double sum1_im;
+				~DensityParams();
+				double* kappa;
+				double* mu;
+				double* weight;
 				int count;
 
-				void add_point(double phase);
-				RightSide estimate_moments();
+				double density_at(double phase);
+				void print();
 		};
 
 		MomentEstimator pos_estimator;
