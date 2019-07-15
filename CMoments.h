@@ -44,7 +44,7 @@ class CMoments: public CTemporal
 	private:
 		int id;
 		float estimation;
-		static const int moment_count = 3;
+		static const int moment_count = 18;
 
 		class MomentEstimator {
 			public:
@@ -77,16 +77,17 @@ class CMoments: public CTemporal
 
 		class DensityParams {
 			public:
-				DensityParams(int count = 0);
-				DensityParams(RightSide& rs);
+				DensityParams(int count_ = -1);
 				~DensityParams();
 				double* kappa;
 				double* mu;
 				double* weight;
 				int count;
 
+				void calculate(RightSide& rs);
 				double density_at(double phase);
 				void print();
+				void reset(int count_);
 		};
 
 		MomentEstimator pos_estimator;

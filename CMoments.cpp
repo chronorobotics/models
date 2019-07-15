@@ -68,29 +68,36 @@ CMoments::DensityParams::DensityParams(int count_) :
 	kappa(),
 	mu(),
 	weight(),
-	count(count_)
-{
-}
-
-CMoments::DensityParams::~DensityParams() {
-	if (count) {
-		delete[] kappa;
-		delete[] mu;
-		delete[] weight;
-	}
-}
-
-CMoments::DensityParams::DensityParams(RightSide& rs) :
-	kappa(),
-	mu(),
-	weight(),
 	count()
 {
-	count = moment_count*2/3;
+	if (count_ < 0) {
+		count = moment_count*2/3;
+	} else {
+		count = count_;
+	}
 	kappa = new double[count];
 	mu = new double[count];
 	weight = new double[count];
+}
 
+CMoments::DensityParams::~DensityParams() {
+	delete[] kappa;
+	delete[] mu;
+	delete[] weight;
+}
+
+void CMoments::DensityParams::reset(int count_) {
+	delete[] kappa;
+	delete[] mu;
+	delete[] weight;
+	count = count_;
+	kappa = new double[count];
+	mu = new double[count];
+	weight = new double[count];
+}
+
+void CMoments::DensityParams::calculate(RightSide& rs)
+{
 	int status;
 	int iter = 0;
 
@@ -99,8 +106,8 @@ CMoments::DensityParams::DensityParams(RightSide& rs) :
 	gsl_multiroot_function f = {&CMoments::moment_f, n, &rs};
 
 	gsl_vector *x = gsl_vector_alloc(n);
-	for (int i = n-1; i >= 0; --i) {
-		gsl_vector_set(x, i, 1);
+	for (int i = 0; i < n; ++i) {
+		gsl_vector_set(x, i, 0.012431 + i*0.10347);
 	}
 
 	gsl_multiroot_fsolver* s;
@@ -114,13 +121,10 @@ CMoments::DensityParams::DensityParams(RightSide& rs) :
 		iter++;
 		status = gsl_multiroot_fsolver_iterate(s);
 
-		double abs = 0;
-		for (int i = n-1; i >= 0; --i) {
-			double foo = gsl_vector_get(s->f, i);
-			abs += foo*foo;
-		}
-
-		std::cout << "iter "<< iter <<": abs = "<< sqrt(abs) << std::endl;
+		std::cout << "iter "<< iter <<" "<< gsl_vector_get(s->f, 0) << " " << gsl_vector_get(s->f, 1) << " " << gsl_vector_get(s->f, 2) << " "
+							<< gsl_vector_get(s->f, 3) << " " << gsl_vector_get(s->f, 4) << " " << gsl_vector_get(s->f, 5) << std::endl;
+		std::cout << gsl_vector_get(s->x, 0) << " " << gsl_vector_get(s->x, 1) << " " << gsl_vector_get(s->x, 2) << " "
+							<< gsl_vector_get(s->x, 3) << " " << gsl_vector_get(s->x, 4) << " " << gsl_vector_get(s->x, 5) << std::endl;
 
 		if (status) {
 			break;
@@ -131,8 +135,8 @@ CMoments::DensityParams::DensityParams(RightSide& rs) :
 
 	printf ("status = %s\n", gsl_strerror (status));
 	for (int i = 0; i < count; ++i) {
-		kappa[i]  = gsl_vector_get(s->x, 3*i);
-		mu[i]     = gsl_vector_get(s->x, 3*i + 1);
+		kappa[i]  = fabs(gsl_vector_get(s->x, 3*i));
+		mu[i]     = gsl_vector_get(s->x, 3*i + 1) + M_PI_2;
 		weight[i] = gsl_vector_get(s->x, 3*i + 2);
 	}
 
@@ -161,8 +165,8 @@ CMoments::MomentEstimator::MomentEstimator() :
 	sum_im(),
 	count(0)
 {
-	sum_re = new double[moment_count];
-	sum_im = new double[moment_count];
+	sum_re = new double[moment_count]();
+	sum_im = new double[moment_count]();
 }
 
 CMoments::MomentEstimator::~MomentEstimator() {
@@ -179,7 +183,7 @@ void CMoments::MomentEstimator::add_point(double phase) {
 }
 
 double CMoments::time_to_phase(uint32_t time) {
-	float phase = fmodf(time, 86400.0f) / 86400;
+	float phase = fmodf(time, 604800.0f) / 604800;
 	if (phase > 0.5) {
 		phase -= 1;
 	}
@@ -207,27 +211,18 @@ int CMoments::moment_f(const gsl_vector* x, void* params, gsl_vector* f) {
 	RightSide* rs = (RightSide*) params;
 	int c = rs->count*2/3;
 
-	/*
-		const double x0 = gsl_vector_get (x, 0);
-		const double x1 = gsl_vector_get (x, 1);
-
-		double foo = gsl_sf_bessel_I1(x0) / gsl_sf_bessel_I0(x0);
-
-		const double y0 = foo * cos(x1) - rs->moment1_re;
-		const double y1 = foo * sin(x1) - rs->moment1_im;
-
-		gsl_vector_set (f, 0, y0);
-		gsl_vector_set (f, 1, y1);
-	*/
-
 	for (int i = 0; i < rs->count; ++i) {
 		double y_re = 0;
 		double y_im = 0;
 
 		for (int j = 0; j < c; ++j) {
-			const double x_kappa  = gsl_vector_get(x, 3*j);
-			const double x_mu     = gsl_vector_get(x, 3*j + 1);
-			const double x_weight = gsl_vector_get(x, 3*j + 2);
+			double x_kappa  = std::min(fabs(gsl_vector_get(x, 3*j)), 100.0);
+			double x_mu     = gsl_vector_get(x, 3*j + 1);
+			double x_weight = gsl_vector_get(x, 3*j + 2);
+
+			if (isnan(x_kappa)) {
+				x_kappa = 100.0;
+			}
 
 			double foo = gsl_sf_bessel_In(i+1, x_kappa) / gsl_sf_bessel_I0(x_kappa);
 
@@ -237,6 +232,7 @@ int CMoments::moment_f(const gsl_vector* x, void* params, gsl_vector* f) {
 
 		gsl_vector_set (f, 2*i    , y_re - rs->moment_re[i]);
 		gsl_vector_set (f, 2*i + 1, y_im - rs->moment_im[i]);
+
 	}
 
 	return GSL_SUCCESS;
@@ -247,8 +243,8 @@ void CMoments::update(int modelOrder, unsigned int* times, float* signal, int le
 	RightSide pos_rs(pos_estimator);
 	RightSide neg_rs(neg_estimator);
 
-	pos_density = DensityParams(pos_rs);
-	neg_density = DensityParams(neg_rs);
+	pos_density.calculate(pos_rs);
+	neg_density.calculate(neg_rs);
 
 	ofstream myfile0("0.txt");
 	ofstream myfile1("1.txt");
@@ -278,10 +274,10 @@ float CMoments::estimate(uint32_t time)
 	float phase = time_to_phase(time);
 
 	float pd = pos_density.density_at(phase);
-	float nd = neg_density.density_at(phase);
+	//float nd = neg_density.density_at(phase);
 
-	return pd / (pd + nd);
-	//return pd;
+	//return pd / (pd + nd);
+	return pd;
 }
 
 float CMoments::predict(uint32_t time)
@@ -323,12 +319,12 @@ int CMoments::load(FILE* file)
 {
 	int cnt;
 	fread(&cnt, sizeof(int), 1, file);
-	pos_density = DensityParams(cnt);
+	pos_density.reset(cnt);
 	fread(pos_density.kappa, sizeof(double), cnt, file);
 	fread(pos_density.mu, sizeof(double), cnt, file);
 	fread(pos_density.weight, sizeof(double), cnt, file);
 	fread(&cnt, sizeof(int), 1, file);
-	neg_density = DensityParams(cnt);
+	neg_density.reset(cnt);
 	fread(neg_density.kappa, sizeof(double), cnt, file);
 	fread(neg_density.mu, sizeof(double), cnt, file);
 	fread(neg_density.weight, sizeof(double), cnt, file);
@@ -362,14 +358,14 @@ int CMoments::importFromArray(double* array, int len)
 	if (type != TT_NONE) std::cerr << "Error loading the model, type mismatch." << std::endl;
 	int cnt;
 	cnt = array[pos++];
-	pos_density = DensityParams(cnt);
+	pos_density.reset(cnt);
 	for (int i = 0; i <= pos_density.count; ++i) {
 		pos_density.kappa[i] = array[pos++];
 		pos_density.mu[i] = array[pos++];
 		pos_density.weight[i] = array[pos++];
 	}
 	cnt = array[pos++];
-	neg_density = DensityParams(cnt);
+	neg_density.reset(cnt);
 	for (int i = 0; i <= pos_density.count; ++i) {
 		neg_density.kappa[i] = array[pos++];
 		neg_density.mu[i] = array[pos++];
