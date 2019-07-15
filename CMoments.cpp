@@ -3,6 +3,8 @@
 #include <fstream>
 #include "CMoments.h"
 
+#include "moments/right_side.h"
+
 using namespace std;
 
 CMoments::CMoments(int idd)
@@ -22,34 +24,6 @@ void CMoments::init(int iMaxPeriod,int elements,int numClasses)
 
 CMoments::~CMoments()
 {
-}
-
-CMoments::RightSide::RightSide() :
-	moment_re(),
-	moment_im(),
-	count(moment_count)
-{
-	moment_re = new double[moment_count];
-	moment_im = new double[moment_count];
-}
-
-CMoments::RightSide::RightSide(const MomentEstimator& me) :
-	moment_re(),
-	moment_im(),
-	count(moment_count)
-{
-	moment_re = new double[moment_count];
-	moment_im = new double[moment_count];
-
-	for (int i = 0; i < moment_count; ++i) {
-		moment_re[i] = me.sum_re[i] / me.count;
-		moment_im[i] = me.sum_im[i] / me.count;
-	}
-}
-
-CMoments::RightSide::~RightSide() {
-	delete[] moment_re;
-	delete[] moment_im;
 }
 
 CMoments::TimeSample::TimeSample() :

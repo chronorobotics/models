@@ -17,6 +17,8 @@
 	
 using namespace std;
 
+class RightSide;
+
 class CMoments: public CTemporal
 {
 	public:
@@ -48,16 +50,6 @@ class CMoments: public CTemporal
 	private:
 		int id;
 		float estimation;
-
-		class RightSide {
-			public:
-				RightSide();
-				RightSide(const MomentEstimator& me);
-				~RightSide();
-				double* moment_re;
-				double* moment_im;
-				int count;
-		};
 
 		class TimeSample {
 			public:
