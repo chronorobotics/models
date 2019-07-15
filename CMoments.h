@@ -88,6 +88,11 @@ class CMoments: public CTemporal
 				double density_at(double phase);
 				void print();
 				void reset(int count_);
+
+				static double lnhyp(double x);
+				static double hyp(double x);
+
+				static int moment_f(const gsl_vector* x, void* params, gsl_vector* f);
 		};
 
 		MomentEstimator pos_estimator;
@@ -98,11 +103,6 @@ class CMoments: public CTemporal
 		TimeSample sampleArray[1000000];
 		int numSamples;
 		double time_to_phase(uint32_t time);
-
-		static double lnhyp(double x);
-		static double hyp(double x);
-
-		static int moment_f(const gsl_vector* x, void* params, gsl_vector* f);
 };
 
 #endif

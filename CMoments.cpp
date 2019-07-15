@@ -103,7 +103,7 @@ void CMoments::DensityParams::calculate(RightSide& rs)
 
 	const size_t n = moment_count*2;
 	std::cout << n << " " << count << std::endl;
-	gsl_multiroot_function f = {&CMoments::moment_f, n, &rs};
+	gsl_multiroot_function f = {&DensityParams::moment_f, n, &rs};
 
 	gsl_vector *x = gsl_vector_alloc(n);
 	for (int i = 0; i < n; ++i) {
@@ -207,7 +207,7 @@ int CMoments::add(uint32_t time,float state)
 	return 0;
 }
 
-int CMoments::moment_f(const gsl_vector* x, void* params, gsl_vector* f) {
+int CMoments::DensityParams::moment_f(const gsl_vector* x, void* params, gsl_vector* f) {
 	RightSide* rs = (RightSide*) params;
 	int c = rs->count*2/3;
 
@@ -234,12 +234,12 @@ int CMoments::moment_f(const gsl_vector* x, void* params, gsl_vector* f) {
 	return GSL_SUCCESS;
 }
 
-double CMoments::lnhyp(double x) {
+double CMoments::DensityParams::lnhyp(double x) {
 	//return log(1 + x/2 + sqrt(x*x + 4)/2);
 	return log(x*x + 1);
 }
 
-double CMoments::hyp(double x) {
+double CMoments::DensityParams::hyp(double x) {
 	return sqrt(x*x + 1)-1;
 }
 
