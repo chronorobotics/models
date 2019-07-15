@@ -44,7 +44,7 @@ class CMoments: public CTemporal
 	private:
 		int id;
 		float estimation;
-		static const int moment_count = 18;
+		static const int moment_count = 3;
 
 		class MomentEstimator {
 			public:
@@ -98,6 +98,9 @@ class CMoments: public CTemporal
 		TimeSample sampleArray[1000000];
 		int numSamples;
 		double time_to_phase(uint32_t time);
+
+		static double lnhyp(double x);
+		static double hyp(double x);
 
 		static int moment_f(const gsl_vector* x, void* params, gsl_vector* f);
 };

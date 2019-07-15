@@ -107,7 +107,7 @@ void CMoments::DensityParams::calculate(RightSide& rs)
 
 	gsl_vector *x = gsl_vector_alloc(n);
 	for (int i = 0; i < n; ++i) {
-		gsl_vector_set(x, i, 0.012431 + i*0.10347);
+		gsl_vector_set(x, i, 1.012431 + i*0.10347);
 	}
 
 	gsl_multiroot_fsolver* s;
@@ -135,9 +135,9 @@ void CMoments::DensityParams::calculate(RightSide& rs)
 
 	printf ("status = %s\n", gsl_strerror (status));
 	for (int i = 0; i < count; ++i) {
-		kappa[i]  = fabs(gsl_vector_get(s->x, 3*i));
+		kappa[i]  = lnhyp(gsl_vector_get(s->x, 3*i));
 		mu[i]     = gsl_vector_get(s->x, 3*i + 1) + M_PI_2;
-		weight[i] = gsl_vector_get(s->x, 3*i + 2);
+		weight[i] = hyp(gsl_vector_get(s->x, 3*i + 2));
 	}
 
 	gsl_multiroot_fsolver_free(s);
@@ -183,7 +183,7 @@ void CMoments::MomentEstimator::add_point(double phase) {
 }
 
 double CMoments::time_to_phase(uint32_t time) {
-	float phase = fmodf(time, 604800.0f) / 604800;
+	float phase = fmodf(time, 86400.0f) / 86400;
 	if (phase > 0.5) {
 		phase -= 1;
 	}
@@ -216,13 +216,9 @@ int CMoments::moment_f(const gsl_vector* x, void* params, gsl_vector* f) {
 		double y_im = 0;
 
 		for (int j = 0; j < c; ++j) {
-			double x_kappa  = std::min(fabs(gsl_vector_get(x, 3*j)), 100.0);
+			double x_kappa  = lnhyp(gsl_vector_get(x, 3*j));
 			double x_mu     = gsl_vector_get(x, 3*j + 1);
-			double x_weight = gsl_vector_get(x, 3*j + 2);
-
-			if (isnan(x_kappa)) {
-				x_kappa = 100.0;
-			}
+			double x_weight = hyp(gsl_vector_get(x, 3*j + 2));
 
 			double foo = gsl_sf_bessel_In(i+1, x_kappa) / gsl_sf_bessel_I0(x_kappa);
 
@@ -236,6 +232,15 @@ int CMoments::moment_f(const gsl_vector* x, void* params, gsl_vector* f) {
 	}
 
 	return GSL_SUCCESS;
+}
+
+double CMoments::lnhyp(double x) {
+	//return log(1 + x/2 + sqrt(x*x + 4)/2);
+	return log(x*x + 1);
+}
+
+double CMoments::hyp(double x) {
+	return sqrt(x*x + 1)-1;
 }
 
 void CMoments::update(int modelOrder, unsigned int* times, float* signal, int length)
