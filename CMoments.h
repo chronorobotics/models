@@ -44,7 +44,7 @@ class CMoments: public CTemporal
 	private:
 		int id;
 		float estimation;
-		static const int moment_count = 18;
+		static const int moment_count = 12;
 
 		class MomentEstimator {
 			public:
@@ -100,6 +100,8 @@ class CMoments: public CTemporal
 		double time_to_phase(uint32_t time);
 
 		static int moment_f(const gsl_vector* x, void* params, gsl_vector* f);
+		static int moment_df(const gsl_vector* x, void* params, gsl_matrix* J);
+		static int moment_fdf (const gsl_vector* x, void* params, gsl_vector* f, gsl_matrix* J);
 };
 
 #endif

@@ -103,23 +103,23 @@ void CMoments::DensityParams::calculate(RightSide& rs)
 
 	const size_t n = moment_count*2;
 	std::cout << n << " " << count << std::endl;
-	gsl_multiroot_function f = {&CMoments::moment_f, n, &rs};
+	gsl_multiroot_function_fdf fdf = {&CMoments::moment_f, &CMoments::moment_df, &CMoments::moment_fdf, n, &rs};
 
 	gsl_vector *x = gsl_vector_alloc(n);
 	for (int i = 0; i < n; ++i) {
 		gsl_vector_set(x, i, 0.012431 + i*0.10347);
 	}
 
-	gsl_multiroot_fsolver* s;
-	const gsl_multiroot_fsolver_type* T;
-	T = gsl_multiroot_fsolver_hybrids;
-	s = gsl_multiroot_fsolver_alloc (T, n);
-	gsl_multiroot_fsolver_set (s, &f, x);
+	gsl_multiroot_fdfsolver* s;
+	const gsl_multiroot_fdfsolver_type* T;
+	T = gsl_multiroot_fdfsolver_gnewton;
+	s = gsl_multiroot_fdfsolver_alloc (T, n);
+	gsl_multiroot_fdfsolver_set (s, &fdf, x);
 
 	do
 	{
 		iter++;
-		status = gsl_multiroot_fsolver_iterate(s);
+		status = gsl_multiroot_fdfsolver_iterate(s);
 
 		std::cout << "iter "<< iter <<" "<< gsl_vector_get(s->f, 0) << " " << gsl_vector_get(s->f, 1) << " " << gsl_vector_get(s->f, 2) << " "
 							<< gsl_vector_get(s->f, 3) << " " << gsl_vector_get(s->f, 4) << " " << gsl_vector_get(s->f, 5) << std::endl;
@@ -140,7 +140,7 @@ void CMoments::DensityParams::calculate(RightSide& rs)
 		weight[i] = gsl_vector_get(s->x, 3*i + 2);
 	}
 
-	gsl_multiroot_fsolver_free(s);
+	gsl_multiroot_fdfsolver_free(s);
 	gsl_vector_free(x);
 }
 
@@ -183,7 +183,7 @@ void CMoments::MomentEstimator::add_point(double phase) {
 }
 
 double CMoments::time_to_phase(uint32_t time) {
-	float phase = fmodf(time, 604800.0f) / 604800;
+	float phase = fmodf(time, 86400.0f) / 86400;
 	if (phase > 0.5) {
 		phase -= 1;
 	}
@@ -220,7 +220,7 @@ int CMoments::moment_f(const gsl_vector* x, void* params, gsl_vector* f) {
 			double x_mu     = gsl_vector_get(x, 3*j + 1);
 			double x_weight = gsl_vector_get(x, 3*j + 2);
 
-			if (isnan(x_kappa)) {
+			if (isnan(x_kappa) || x_kappa > 100) {
 				x_kappa = 100.0;
 			}
 
@@ -233,6 +233,103 @@ int CMoments::moment_f(const gsl_vector* x, void* params, gsl_vector* f) {
 		gsl_vector_set (f, 2*i    , y_re - rs->moment_re[i]);
 		gsl_vector_set (f, 2*i + 1, y_im - rs->moment_im[i]);
 
+	}
+
+	return GSL_SUCCESS;
+}
+
+int CMoments::moment_df (const gsl_vector* x, void* params, gsl_matrix * J) {
+	RightSide* rs = (RightSide*) params;
+	int c = rs->count*2/3;
+
+	for (int i = 0; i < rs->count; ++i) {
+
+		for (int j = 0; j < c; ++j) {
+			double x_kappa  = gsl_vector_get(x, 3*j); //std::min(fabs(gsl_vector_get(x, 3*j)), 100.0);
+			double x_mu     = gsl_vector_get(x, 3*j + 1);
+			double x_weight = gsl_vector_get(x, 3*j + 2);
+
+			double sgn = 1;
+			if (x_kappa < 0) {
+				x_kappa = -x_kappa;
+				if (!(i % 2)) {
+					sgn = -1;
+				}
+			}
+			if (isnan(x_kappa) || x_kappa > 100) {
+				x_kappa = 100.0;
+			}
+
+			double i0 = gsl_sf_bessel_I0(x_kappa);
+			double foo = gsl_sf_bessel_In(i+1, x_kappa) / i0;
+			double dfoo = (i0*(gsl_sf_bessel_In(i, x_kappa) + gsl_sf_bessel_In(i+2, x_kappa)) + 2*gsl_sf_bessel_In(i+1, x_kappa)*gsl_sf_bessel_I1(x_kappa))/(2*i0*i0);
+
+			double dre_dkappa = sgn * x_weight * dfoo * cos((i+1)*x_mu);
+			double dim_dkappa = sgn * x_weight * dfoo * sin((i+1)*x_mu);
+			double dre_dmu = -x_weight * foo * sin((i+1)*x_mu);
+			double dim_dmu = x_weight * foo * cos((i+1)*x_mu);
+			double dre_dw = foo * cos((i+1)*x_mu);
+			double dim_dw = foo * sin((i+1)*x_mu);
+			gsl_matrix_set (J, 2*i    , 3*j    , dre_dkappa);
+			gsl_matrix_set (J, 2*i    , 3*j + 1, dre_dmu);
+			gsl_matrix_set (J, 2*i    , 3*j + 2, dre_dw);
+			gsl_matrix_set (J, 2*i + 1, 3*j    , dim_dkappa);
+			gsl_matrix_set (J, 2*i + 1, 3*j + 1, dim_dmu);
+			gsl_matrix_set (J, 2*i + 1, 3*j + 2, dim_dw);
+		}
+
+	}
+
+	return GSL_SUCCESS;
+}
+
+int CMoments::moment_fdf (const gsl_vector* x, void* params, gsl_vector* f, gsl_matrix* J) {
+	RightSide* rs = (RightSide*) params;
+	int c = rs->count*2/3;
+
+	for (int i = 0; i < rs->count; ++i) {
+		double y_re = 0;
+		double y_im = 0;
+
+		for (int j = 0; j < c; ++j) {
+			double x_kappa  = gsl_vector_get(x, 3*j); //std::min(fabs(gsl_vector_get(x, 3*j)), 100.0);
+			double x_mu     = gsl_vector_get(x, 3*j + 1);
+			double x_weight = gsl_vector_get(x, 3*j + 2);
+
+			double sgn = 1;
+			if (x_kappa < 0) {
+				x_kappa = -x_kappa;
+				if (!(i % 2)) {
+					sgn = -1;
+				}
+			}
+			if (isnan(x_kappa) || x_kappa > 100) {
+				x_kappa = 100.0;
+			}
+
+			double i0 = gsl_sf_bessel_I0(x_kappa);
+			double foo = gsl_sf_bessel_In(i+1, x_kappa) / i0;
+			double dfoo = (i0*(gsl_sf_bessel_In(i, x_kappa) + gsl_sf_bessel_In(i+2, x_kappa)) + 2*gsl_sf_bessel_In(i+1, x_kappa)*gsl_sf_bessel_I1(x_kappa))/(2*i0*i0);
+
+			double dre_dkappa = sgn * x_weight * dfoo * cos((i+1)*x_mu);
+			double dim_dkappa = sgn * x_weight * dfoo * sin((i+1)*x_mu);
+			double dre_dmu = -x_weight * foo * sin((i+1)*x_mu);
+			double dim_dmu = x_weight * foo * cos((i+1)*x_mu);
+			double dre_dw = foo * cos((i+1)*x_mu);
+			double dim_dw = foo * sin((i+1)*x_mu);
+			gsl_matrix_set (J, 2*i    , 3*j    , dre_dkappa);
+			gsl_matrix_set (J, 2*i    , 3*j + 1, dre_dmu);
+			gsl_matrix_set (J, 2*i    , 3*j + 2, dre_dw);
+			gsl_matrix_set (J, 2*i + 1, 3*j    , dim_dkappa);
+			gsl_matrix_set (J, 2*i + 1, 3*j + 1, dim_dmu);
+			gsl_matrix_set (J, 2*i + 1, 3*j + 2, dim_dw);
+
+			y_re += x_weight * foo * cos((i+1)*x_mu);
+			y_im += x_weight * foo * sin((i+1)*x_mu);
+		}
+
+		gsl_vector_set (f, 2*i    , y_re - rs->moment_re[i]);
+		gsl_vector_set (f, 2*i + 1, y_im - rs->moment_im[i]);
 	}
 
 	return GSL_SUCCESS;
