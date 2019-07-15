@@ -33,7 +33,7 @@ CMoments::RightSide::RightSide() :
 	moment_im = new double[moment_count];
 }
 
-CMoments::RightSide::RightSide(const CMoments::MomentEstimator& me) :
+CMoments::RightSide::RightSide(const MomentEstimator& me) :
 	moment_re(),
 	moment_im(),
 	count(moment_count)
@@ -158,28 +158,6 @@ void CMoments::DensityParams::print() {
 		std::cout << "(" << kappa[i] << ", " << mu[i] << ", " << weight[i] << "), ";
 	}
 	std::cout << std::endl;
-}
-
-CMoments::MomentEstimator::MomentEstimator() :
-	sum_re(),
-	sum_im(),
-	count(0)
-{
-	sum_re = new double[moment_count]();
-	sum_im = new double[moment_count]();
-}
-
-CMoments::MomentEstimator::~MomentEstimator() {
-	delete[] sum_re;
-	delete[] sum_im;
-}
-
-void CMoments::MomentEstimator::add_point(double phase) {
-	for (int i = 1; i <= moment_count; ++i) {
-		sum_re[i] += cos(i*phase);
-		sum_im[i] += sin(i*phase);
-	}
-	count++;
 }
 
 double CMoments::time_to_phase(uint32_t time) {

@@ -11,6 +11,8 @@
 #include <gsl/gsl_multiroots.h>
 #include "CTemporal.h"
 
+#include "moments/moment_estimator.h"
+
 #define MAX_ID_LENGTH 100
 	
 using namespace std;
@@ -41,21 +43,11 @@ class CMoments: public CTemporal
 		int save(FILE* file,bool lossy = false);
 		int load(FILE* file);
 
+		static const int moment_count = 3;
+
 	private:
 		int id;
 		float estimation;
-		static const int moment_count = 3;
-
-		class MomentEstimator {
-			public:
-				MomentEstimator();
-				~MomentEstimator();
-				double* sum_re;
-				double* sum_im;
-				int count;
-
-				void add_point(double phase);
-		};
 
 		class RightSide {
 			public:
