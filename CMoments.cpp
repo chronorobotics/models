@@ -7,10 +7,11 @@
 using namespace std;
 
 CMoments::CMoments(int idd) :
-	pos_estimator(),
-	neg_estimator(),
-	pos_density(),
-	neg_density()
+	cluster_count(2),
+	pos_estimator(this),
+	neg_estimator(this),
+	pos_density(this),
+	neg_density(this)
 {
 	id=idd;
 	measurements = 0;
@@ -39,6 +40,14 @@ CMoments::TimeSample::TimeSample(long t_, float v_) :
 	t(t_),
 	v(v_)
 {
+}
+
+int CMoments::get_cluster_count() const {
+	return cluster_count;
+}
+
+int CMoments::get_moment_count() const {
+	return ceil(float(cluster_count)*3/2);
 }
 
 double CMoments::time_to_phase(uint32_t time) {

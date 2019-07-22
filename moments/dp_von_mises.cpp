@@ -4,17 +4,12 @@
 #include "dp_von_mises.h"
 #include "right_side.h"
 
-DPVonMises::DPVonMises(int count_) :
-	DensityParams(count_),
+DPVonMises::DPVonMises(CMoments* parent_, int count_) :
+	DensityParams(parent_, count_),
 	kappa(),
 	mu(),
 	weight()
 {
-	if (count_ < 0) {
-		count = CMoments::moment_count*2/3;
-	} else {
-		count = count_;
-	}
 	kappa.resize(count);
 	mu.resize(count);
 	weight.resize(count);
@@ -36,7 +31,7 @@ void DPVonMises::calculate(RightSide& rs)
 	int status;
 	int iter = 0;
 
-	const size_t n = CMoments::moment_count*2;
+	const size_t n = parent->get_moment_count()*2;
 	std::cout << n << " " << count << std::endl;
 	gsl_multiroot_function f = {&DPVonMises::moment_f, n, &rs};
 
@@ -71,7 +66,7 @@ void DPVonMises::calculate(RightSide& rs)
 	printf ("status = %s\n", gsl_strerror (status));
 	for (int i = 0; i < count; ++i) {
 		kappa[i]  = lnhyp(gsl_vector_get(s->x, 3*i));
-		mu[i]     = gsl_vector_get(s->x, 3*i + 1) + M_PI_2;
+		mu[i]     = gsl_vector_get(s->x, 3*i + 1);
 		weight[i] = hyp(gsl_vector_get(s->x, 3*i + 2));
 	}
 

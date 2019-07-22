@@ -11,7 +11,7 @@
 class DPVonMises : public DensityParams
 {
 	public:
-		DPVonMises(int count_ = -1);
+		DPVonMises(CMoments* parent_, int count_ = -1);
 		~DPVonMises();
 		std::vector<double> kappa;
 		std::vector<double> mu;
