@@ -7,17 +7,14 @@
 #include <math.h>
 #include <string.h>
 #include <stdint.h>
-#include <gsl/gsl_vector.h>
-#include <gsl/gsl_multiroots.h>
 #include "CTemporal.h"
 
 #include "moments/moment_estimator.h"
+#include "moments/dp_von_mises.h"
 
 #define MAX_ID_LENGTH 100
 	
 using namespace std;
-
-class RightSide;
 
 class CMoments: public CTemporal
 {
@@ -59,30 +56,10 @@ class CMoments: public CTemporal
 				float v;
 		};
 
-		class DensityParams {
-			public:
-				DensityParams(int count_ = -1);
-				~DensityParams();
-				double* kappa;
-				double* mu;
-				double* weight;
-				int count;
-
-				void calculate(RightSide& rs);
-				double density_at(double phase);
-				void print();
-				void reset(int count_);
-
-				static double lnhyp(double x);
-				static double hyp(double x);
-
-				static int moment_f(const gsl_vector* x, void* params, gsl_vector* f);
-		};
-
 		MomentEstimator pos_estimator;
 		MomentEstimator neg_estimator;
-		DensityParams pos_density;
-		DensityParams neg_density;
+		DPVonMises pos_density;
+		DPVonMises neg_density;
 
 		TimeSample sampleArray[1000000];
 		int numSamples;
