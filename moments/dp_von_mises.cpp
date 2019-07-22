@@ -15,25 +15,20 @@ DPVonMises::DPVonMises(int count_) :
 	} else {
 		count = count_;
 	}
-	kappa = new double[count];
-	mu = new double[count];
-	weight = new double[count];
+	kappa.resize(count);
+	mu.resize(count);
+	weight.resize(count);
 }
 
 DPVonMises::~DPVonMises() {
-	delete[] kappa;
-	delete[] mu;
-	delete[] weight;
+
 }
 
 void DPVonMises::reset(int count_) {
-	delete[] kappa;
-	delete[] mu;
-	delete[] weight;
 	count = count_;
-	kappa = new double[count];
-	mu = new double[count];
-	weight = new double[count];
+	kappa.resize(count);
+	mu.resize(count);
+	weight.resize(count);
 }
 
 void DPVonMises::calculate(RightSide& rs)

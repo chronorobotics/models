@@ -6,7 +6,11 @@
 
 using namespace std;
 
-CMoments::CMoments(int idd)
+CMoments::CMoments(int idd) :
+	pos_estimator(),
+	neg_estimator(),
+	pos_density(),
+	neg_density()
 {
 	id=idd;
 	measurements = 0;
@@ -129,13 +133,13 @@ int CMoments::load(const char* name)
 int CMoments::save(FILE* file,bool lossy)
 {
 	fwrite(&pos_density.count, sizeof(int), 1, file);
-	fwrite(pos_density.kappa, sizeof(double), pos_density.count, file);
-	fwrite(pos_density.mu, sizeof(double), pos_density.count, file);
-	fwrite(pos_density.weight, sizeof(double), pos_density.count, file);
+	fwrite(&pos_density.kappa[0], sizeof(double), pos_density.count, file);
+	fwrite(&pos_density.mu[0], sizeof(double), pos_density.count, file);
+	fwrite(&pos_density.weight[0], sizeof(double), pos_density.count, file);
 	fwrite(&neg_density.count, sizeof(int), 1, file);
-	fwrite(neg_density.kappa, sizeof(double), neg_density.count, file);
-	fwrite(neg_density.mu, sizeof(double), neg_density.count, file);
-	fwrite(neg_density.weight, sizeof(double), neg_density.count, file);
+	fwrite(&neg_density.kappa[0], sizeof(double), neg_density.count, file);
+	fwrite(&neg_density.mu[0], sizeof(double), neg_density.count, file);
+	fwrite(&neg_density.weight[0], sizeof(double), neg_density.count, file);
 	return 0;
 }
 
@@ -144,14 +148,14 @@ int CMoments::load(FILE* file)
 	int cnt;
 	fread(&cnt, sizeof(int), 1, file);
 	pos_density.reset(cnt);
-	fread(pos_density.kappa, sizeof(double), cnt, file);
-	fread(pos_density.mu, sizeof(double), cnt, file);
-	fread(pos_density.weight, sizeof(double), cnt, file);
+	fread(&pos_density.kappa[0], sizeof(double), cnt, file);
+	fread(&pos_density.mu[0], sizeof(double), cnt, file);
+	fread(&pos_density.weight[0], sizeof(double), cnt, file);
 	fread(&cnt, sizeof(int), 1, file);
 	neg_density.reset(cnt);
-	fread(neg_density.kappa, sizeof(double), cnt, file);
-	fread(neg_density.mu, sizeof(double), cnt, file);
-	fread(neg_density.weight, sizeof(double), cnt, file);
+	fread(&neg_density.kappa[0], sizeof(double), cnt, file);
+	fread(&neg_density.mu[0], sizeof(double), cnt, file);
+	fread(&neg_density.weight[0], sizeof(double), cnt, file);
 	return 0;
 }
 

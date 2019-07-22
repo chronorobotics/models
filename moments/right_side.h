@@ -1,6 +1,8 @@
 #ifndef RIGHT_SIDE_H
 #define RIGHT_SIDE_H
 
+#include <vector>
+
 class MomentEstimator;
 
 class RightSide {
@@ -8,8 +10,8 @@ class RightSide {
 		RightSide();
 		RightSide(const MomentEstimator& me);
 		~RightSide();
-		double* moment_re;
-		double* moment_im;
+		std::vector<double> moment_re;
+		std::vector<double> moment_im;
 		int count;
 };
 

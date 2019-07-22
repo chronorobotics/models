@@ -1,13 +1,14 @@
 #ifndef MOMENT_ESTIMATOR_H
 #define MOMENT_ESTIMATOR_H
 
+#include <vector>
 
 class MomentEstimator {
 	public:
 		MomentEstimator();
 		~MomentEstimator();
-		double* sum_re;
-		double* sum_im;
+		std::vector<double> sum_re;
+		std::vector<double> sum_im;
 		int count;
 
 		void add_point(double phase);

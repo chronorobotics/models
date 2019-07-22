@@ -8,13 +8,12 @@ MomentEstimator::MomentEstimator() :
 	sum_im(),
 	count(0)
 {
-	sum_re = new double[CMoments::moment_count]();
-	sum_im = new double[CMoments::moment_count]();
+	sum_re.resize(CMoments::moment_count, 0);
+	sum_im.resize(CMoments::moment_count, 0);
 }
 
 MomentEstimator::~MomentEstimator() {
-	delete[] sum_re;
-	delete[] sum_im;
+
 }
 
 void MomentEstimator::add_point(double phase) {
