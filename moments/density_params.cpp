@@ -2,11 +2,12 @@
 
 #include "density_params.h"
 
-DensityParams::DensityParams(int count_) :
-	count()
+DensityParams::DensityParams(CMoments* parent_, int count_) :
+	count(),
+	parent(parent_)
 {
 	if (count_ < 0) {
-		count = CMoments::moment_count*2/3;
+		count = parent->get_cluster_count();
 	} else {
 		count = count_;
 	}

@@ -1,11 +1,12 @@
 #ifndef DENSITY_PARAMS_H
 #define DENSITY_PARAMS_H
 
+class CMoments;
 class RightSide;
 
 class DensityParams {
 	public:
-		DensityParams(int count_ = -1);
+		DensityParams(CMoments* parent_, int count_ = -1);
 		~DensityParams();
 		int count;
 
@@ -15,6 +16,9 @@ class DensityParams {
 		virtual double density_at(double phase) = 0;
 		virtual void print() = 0;
 		virtual void reset(int count_) = 0;
+
+	protected:
+		CMoments* parent;
 };
 
 #endif // DENSITY_PARAMS_H
