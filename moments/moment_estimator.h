@@ -1,24 +1,20 @@
 #ifndef MOMENT_ESTIMATOR_H
 #define MOMENT_ESTIMATOR_H
 
+#include <stdint.h>
 #include <vector>
-
-class CMoments;
 
 class MomentEstimator {
 	public:
-		MomentEstimator(CMoments* parent_);
+		MomentEstimator();
 		~MomentEstimator();
-		std::vector<double> sum_re;
-		std::vector<double> sum_im;
+
+		virtual void add_point(uint32_t time) = 0;
+		virtual std::vector<double> get_moments() const = 0;
+
+	protected:
+		std::vector<double> data;
 		int count;
-
-		void add_point(double phase);
-
-		CMoments* get_parent() const;
-
-	private:
-		CMoments* parent;
 };
 
 #endif // MOMENT_ESTIMATOR_H

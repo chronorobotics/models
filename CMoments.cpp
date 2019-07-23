@@ -2,8 +2,6 @@
 #include <fstream>
 #include "CMoments.h"
 
-#include "moments/right_side.h"
-
 using namespace std;
 
 CMoments::CMoments(int idd) :
@@ -19,8 +17,11 @@ CMoments::CMoments(int idd) :
 
 	numSamples = 0;
 
-	pos_estimator.reset(new MomentEstimator(this));
-	neg_estimator.reset(new MomentEstimator(this));
+	pos_density = DensityParams::create(this, DensityParams::VON_MISES);
+	neg_density = DensityParams::create(this, DensityParams::VON_MISES);
+
+	pos_estimator = pos_density->get_moment_estimator();
+	neg_estimator = neg_density->get_moment_estimator();
 }
 
 void CMoments::init(int iMaxPeriod,int elements,int numClasses)
@@ -53,13 +54,13 @@ int CMoments::get_moment_count() const {
 	return ceil(float(cluster_count)*3/2);
 }
 
-double CMoments::time_to_phase(uint32_t time) {
+/*double CMoments::time_to_phase(uint32_t time) {
 	float phase = fmodf(time, 86400.0f) / 86400;
 	if (phase > 0.5) {
 		phase -= 1;
 	}
 	return phase * M_PI * 2;
-}
+}*/
 
 // adds new state observations at given times
 int CMoments::add(uint32_t time,float state)
@@ -67,12 +68,10 @@ int CMoments::add(uint32_t time,float state)
 	sampleArray[numSamples] = TimeSample(time, state);
 	numSamples++;
 
-	float phase = time_to_phase(time);
-
 	if (state > 0.5) {
-		pos_estimator->add_point(phase);
+		pos_estimator->add_point(time);
 	} else {
-		neg_estimator->add_point(phase);
+		neg_estimator->add_point(time);
 	}
 	measurements++;
 	return 0;
@@ -80,14 +79,8 @@ int CMoments::add(uint32_t time,float state)
 
 void CMoments::update(int modelOrder, unsigned int* times, float* signal, int length)
 {
-	RightSide pos_rs(*pos_estimator);
-	RightSide neg_rs(*neg_estimator);
-
-	pos_density = DensityParams::create(this, DensityParams::VON_MISES);
-	neg_density = DensityParams::create(this, DensityParams::VON_MISES);
-
-	pos_density->calculate(pos_rs);
-	neg_density->calculate(neg_rs);
+	pos_density->calculate();
+	neg_density->calculate();
 
 	ofstream myfile0("0.txt");
 	ofstream myfile1("1.txt");
@@ -114,10 +107,8 @@ void CMoments::print(bool verbose)
 
 float CMoments::estimate(uint32_t time)
 {
-	float phase = time_to_phase(time);
-
-	float pd = pos_density->density_at(phase);
-	//float nd = neg_density->density_at(phase);
+	float pd = pos_density->density_at(time);
+	//float nd = neg_density->density_at(time);
 
 	//return pd / (pd + nd);
 	return pd;
