@@ -147,30 +147,18 @@ int CMoments::load(const char* name)
 
 int CMoments::save(FILE* file,bool lossy)
 {
-	fwrite(&pos_density->count, sizeof(int), 1, file);
-	fwrite(&pos_density->kappa[0], sizeof(double), pos_density->count, file);
-	fwrite(&pos_density->mu[0], sizeof(double), pos_density->count, file);
-	fwrite(&pos_density->weight[0], sizeof(double), pos_density->count, file);
-	fwrite(&neg_density->count, sizeof(int), 1, file);
-	fwrite(&neg_density->kappa[0], sizeof(double), neg_density->count, file);
-	fwrite(&neg_density->mu[0], sizeof(double), neg_density->count, file);
-	fwrite(&neg_density->weight[0], sizeof(double), neg_density->count, file);
+	pos_density->save(file, lossy);
+	neg_density->save(file, lossy);
 	return 0;
 }
 
 int CMoments::load(FILE* file)
 {
-	int cnt;
-	fread(&cnt, sizeof(int), 1, file);
-	pos_density.reset(new DPVonMises(this, cnt));
-	fread(&pos_density->kappa[0], sizeof(double), cnt, file);
-	fread(&pos_density->mu[0], sizeof(double), cnt, file);
-	fread(&pos_density->weight[0], sizeof(double), cnt, file);
-	fread(&cnt, sizeof(int), 1, file);
-	neg_density.reset(new DPVonMises(this, cnt));
-	fread(&neg_density->kappa[0], sizeof(double), cnt, file);
-	fread(&neg_density->mu[0], sizeof(double), cnt, file);
-	fread(&neg_density->weight[0], sizeof(double), cnt, file);
+	pos_density = std::unique_ptr<DPVonMises>(new DPVonMises(this, 0));
+	neg_density = std::unique_ptr<DPVonMises>(new DPVonMises(this, 0));
+
+	pos_density->load(file);
+	neg_density->load(file);
 	return 0;
 }
 
@@ -179,18 +167,8 @@ int CMoments::exportToArray(double* array, int maxLen)
 {
 	int pos = 0;
 	array[pos++] = type;
-	array[pos++] = pos_density->count;
-	for (int i = 0; i <= pos_density->count; ++i) {
-		array[pos++] = pos_density->kappa[i];
-		array[pos++] = pos_density->mu[i];
-		array[pos++] = pos_density->weight[i];
-	}
-	array[pos++] = neg_density->count;
-	for (int i = 0; i <= neg_density->count; ++i) {
-		array[pos++] = neg_density->kappa[i];
-		array[pos++] = neg_density->mu[i];
-		array[pos++] = neg_density->weight[i];
-	}
+	pos_density->exportToArray(array, maxLen, pos);
+	neg_density->exportToArray(array, maxLen, pos);
 	return pos;
 }
 
@@ -199,20 +177,10 @@ int CMoments::importFromArray(double* array, int len)
 	int pos = 0;
 	type = (ETemporalType)array[pos++];
 	if (type != TT_NONE) std::cerr << "Error loading the model, type mismatch." << std::endl;
-	int cnt;
-	cnt = array[pos++];
-	pos_density.reset(new DPVonMises(this, cnt));
-	for (int i = 0; i <= pos_density->count; ++i) {
-		pos_density->kappa[i] = array[pos++];
-		pos_density->mu[i] = array[pos++];
-		pos_density->weight[i] = array[pos++];
-	}
-	cnt = array[pos++];
-	neg_density.reset(new DPVonMises(this, cnt));
-	for (int i = 0; i <= pos_density->count; ++i) {
-		neg_density->kappa[i] = array[pos++];
-		neg_density->mu[i] = array[pos++];
-		neg_density->weight[i] = array[pos++];
-	}
+	pos_density = std::unique_ptr<DPVonMises>(new DPVonMises(this, 0));
+	neg_density = std::unique_ptr<DPVonMises>(new DPVonMises(this, 0));
+
+	pos_density->importFromArray(array, len, pos);
+	neg_density->importFromArray(array, len, pos);
 	return pos;
 }
