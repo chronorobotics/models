@@ -60,14 +60,14 @@ class CMoments: public CTemporal
 				float v;
 		};
 
-		std::unique_ptr<MomentEstimator> pos_estimator;
-		std::unique_ptr<MomentEstimator> neg_estimator;
+		MomentEstimator* pos_estimator;
+		MomentEstimator* neg_estimator;
 		std::unique_ptr<DensityParams> pos_density;
 		std::unique_ptr<DensityParams> neg_density;
 
 		TimeSample sampleArray[1000000];
 		int numSamples;
-		double time_to_phase(uint32_t time);
+		//double time_to_phase(uint32_t time);
 };
 
 #endif

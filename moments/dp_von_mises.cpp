@@ -2,13 +2,14 @@
 #include "../CMoments.h"
 
 #include "dp_von_mises.h"
-#include "right_side.h"
+#include "me_circular.h"
 
 DPVonMises::DPVonMises(CMoments* parent_, int count_) :
 	DensityParams(parent_, count_),
 	kappa(),
 	mu(),
-	weight()
+	weight(),
+	estimator()
 {
 	kappa.resize(count);
 	mu.resize(count);
@@ -19,6 +20,13 @@ DPVonMises::~DPVonMises() {
 
 }
 
+MomentEstimator* DPVonMises::get_moment_estimator() {
+	if (!estimator.get()) {
+		estimator = std::shared_ptr<MECircular>(new MECircular(parent->get_moment_count()));
+	}
+	return estimator.get();
+}
+
 void DPVonMises::reset(int count_) {
 	count = count_;
 	kappa.resize(count);
@@ -26,18 +34,19 @@ void DPVonMises::reset(int count_) {
 	weight.resize(count);
 }
 
-void DPVonMises::calculate(RightSide& rs)
+void DPVonMises::calculate()
 {
+	EquationParams ep(estimator->get_moments(), count, estimator->get_moment_count());
 	int status;
 	int iter = 0;
 
-	const size_t n = parent->get_moment_count()*2;
+	const size_t n = ep.right_side.size();
 	std::cout << n << " " << count << std::endl;
-	gsl_multiroot_function f = {&DPVonMises::moment_f, n, &rs};
+	gsl_multiroot_function f = {&DPVonMises::moment_f, n, &ep};
 
-	gsl_vector *x = gsl_vector_alloc(n);
+	gsl_vector* x = gsl_vector_alloc(n);
 	for (int i = 0; i < n; ++i) {
-		gsl_vector_set(x, i, 1.012431 + i*0.10347);
+		gsl_vector_set(x, i, 1.012431 - i*0.10347);
 	}
 
 	gsl_multiroot_fsolver* s;
@@ -74,7 +83,8 @@ void DPVonMises::calculate(RightSide& rs)
 	gsl_vector_free(x);
 }
 
-double DPVonMises::density_at(double phase) {
+double DPVonMises::density_at(uint32_t time) {
+	double phase = MECircular::time_to_phase(time);
 	double result = 0;
 	for (int i = 0; i < count; ++i) {
 		result += weight[i] * exp(kappa[i] * cos(phase - mu[i])) / (2 * M_PI * gsl_sf_bessel_I0(kappa[i]));
@@ -100,14 +110,13 @@ void DPVonMises::print() {
 }
 
 int DPVonMises::moment_f(const gsl_vector* x, void* params, gsl_vector* f) {
-	RightSide* rs = (RightSide*) params;
-	int c = rs->count*2/3;
+	EquationParams* ep = (EquationParams*) params;
 
-	for (int i = 0; i < rs->count; ++i) {
+	for (int i = ep->moment_count - 1; i >= 0; --i) {
 		double y_re = 0;
 		double y_im = 0;
 
-		for (int j = 0; j < c; ++j) {
+		for (int j = ep->cluster_count - 1; j >= 0; --j) {
 			double x_kappa  = lnhyp(gsl_vector_get(x, 3*j));
 			double x_mu     = gsl_vector_get(x, 3*j + 1);
 			double x_weight = hyp(gsl_vector_get(x, 3*j + 2));
@@ -118,8 +127,10 @@ int DPVonMises::moment_f(const gsl_vector* x, void* params, gsl_vector* f) {
 			y_im += x_weight * foo * sin((i+1)*x_mu);
 		}
 
-		gsl_vector_set (f, 2*i    , y_re - rs->moment_re[i]);
-		gsl_vector_set (f, 2*i + 1, y_im - rs->moment_im[i]);
+		gsl_vector_set (f, 2*i    , y_re - ep->right_side[2*i]);
+		if (2*i + 1 < ep->right_side.size()) {
+			gsl_vector_set (f, 2*i + 1, y_im - ep->right_side[2*i + 1]);
+		}
 
 	}
 
@@ -171,4 +182,12 @@ void DPVonMises::importFromArray(double* array, int len, int& pos)
 		mu[i] = array[pos++];
 		weight[i] = array[pos++];
 	}
+}
+
+DPVonMises::EquationParams::EquationParams(std::vector<double> right_side_, int cluster_count_, int moment_count_) :
+	right_side(right_side_),
+	cluster_count(cluster_count_),
+	moment_count(moment_count_)
+{
+
 }

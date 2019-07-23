@@ -4,7 +4,7 @@
 #include <memory>
 
 class CMoments;
-class RightSide;
+class MomentEstimator;
 
 class DensityParams {
 	public:
@@ -14,8 +14,9 @@ class DensityParams {
 
 		virtual int get_param_count() = 0;
 
-		virtual void calculate(RightSide& rs) = 0;
-		virtual double density_at(double phase) = 0;
+		virtual MomentEstimator* get_moment_estimator() = 0;
+		virtual void calculate() = 0;
+		virtual double density_at(uint32_t time) = 0;
 		virtual void print() = 0;
 		virtual void reset(int count_) = 0;
 

@@ -8,6 +8,8 @@
 
 #include "density_params.h"
 
+class MECircular;
+
 class DPVonMises : public DensityParams
 {
 	public:
@@ -17,8 +19,9 @@ class DPVonMises : public DensityParams
 		std::vector<double> mu;
 		std::vector<double> weight;
 
-		void calculate(RightSide& rs);
-		double density_at(double phase);
+		virtual MomentEstimator* get_moment_estimator();
+		void calculate();
+		double density_at(uint32_t time);
 		void print();
 		void reset(int count_);
 
@@ -29,14 +32,24 @@ class DPVonMises : public DensityParams
 		void exportToArray(double* array, int maxLen, int& pos);
 		int save(FILE* file, bool lossy = false);
 
+	protected:
+		class EquationParams {
+			public:
+				EquationParams(std::vector<double> right_side_, int cluster_count_, int moment_count_);
+				std::vector<double> right_side;
+				int cluster_count;
+				int moment_count;
+		};
+
 		static double lnhyp(double x);
 		static double hyp(double x);
 
 		static int moment_f(const gsl_vector* x, void* params, gsl_vector* f);
 
-	protected:
 		void importFromArray(double* array, int len, int& pos);
 		int load(FILE* file);
+
+		std::shared_ptr<MECircular> estimator;
 };
 
 #endif // DP_VON_MISES_H
