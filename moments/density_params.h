@@ -1,6 +1,8 @@
 #ifndef DENSITY_PARAMS_H
 #define DENSITY_PARAMS_H
 
+#include <memory>
+
 class CMoments;
 class RightSide;
 
@@ -21,6 +23,12 @@ class DensityParams {
 		virtual void importFromArray(double* array, int len, int& pos) = 0;
 		virtual int save(FILE* file, bool lossy = false) = 0;
 		virtual int load(FILE* file) = 0;
+
+		enum Distribution {
+			VON_MISES
+		};
+
+		static std::unique_ptr<DensityParams> create(CMoments* parent, Distribution dist, int count = -1);
 
 	protected:
 		CMoments* parent;
