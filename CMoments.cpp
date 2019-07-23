@@ -83,8 +83,8 @@ void CMoments::update(int modelOrder, unsigned int* times, float* signal, int le
 	RightSide pos_rs(*pos_estimator);
 	RightSide neg_rs(*neg_estimator);
 
-	pos_density.reset(new DPVonMises(this));
-	neg_density.reset(new DPVonMises(this));
+	pos_density = DensityParams::create(this, DensityParams::VON_MISES);
+	neg_density = DensityParams::create(this, DensityParams::VON_MISES);
 
 	pos_density->calculate(pos_rs);
 	neg_density->calculate(neg_rs);
@@ -154,11 +154,8 @@ int CMoments::save(FILE* file,bool lossy)
 
 int CMoments::load(FILE* file)
 {
-	pos_density = std::unique_ptr<DPVonMises>(new DPVonMises(this, 0));
-	neg_density = std::unique_ptr<DPVonMises>(new DPVonMises(this, 0));
-
-	pos_density->load(file);
-	neg_density->load(file);
+	pos_density = DensityParams::load(this, file);
+	neg_density = DensityParams::load(this, file);
 	return 0;
 }
 
@@ -177,10 +174,7 @@ int CMoments::importFromArray(double* array, int len)
 	int pos = 0;
 	type = (ETemporalType)array[pos++];
 	if (type != TT_NONE) std::cerr << "Error loading the model, type mismatch." << std::endl;
-	pos_density = std::unique_ptr<DPVonMises>(new DPVonMises(this, 0));
-	neg_density = std::unique_ptr<DPVonMises>(new DPVonMises(this, 0));
-
-	pos_density->importFromArray(array, len, pos);
-	neg_density->importFromArray(array, len, pos);
+	pos_density = DensityParams::importFromArray(this, array, len, pos);
+	neg_density = DensityParams::importFromArray(this, array, len, pos);
 	return pos;
 }
