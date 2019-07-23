@@ -50,10 +50,6 @@ int CMoments::get_cluster_count() const {
 	return cluster_count;
 }
 
-int CMoments::get_moment_count() const {
-	return ceil(float(cluster_count)*3/2);
-}
-
 /*double CMoments::time_to_phase(uint32_t time) {
 	float phase = fmodf(time, 86400.0f) / 86400;
 	if (phase > 0.5) {

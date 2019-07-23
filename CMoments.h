@@ -43,9 +43,7 @@ class CMoments: public CTemporal
 		int save(FILE* file,bool lossy = false);
 		int load(FILE* file);
 
-		//static const int moment_count = 3;
 		int get_cluster_count() const;
-		int get_moment_count() const;
 
 	private:
 		int id;

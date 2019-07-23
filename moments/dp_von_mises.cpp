@@ -22,7 +22,7 @@ DPVonMises::~DPVonMises() {
 
 MomentEstimator* DPVonMises::get_moment_estimator() {
 	if (!estimator.get()) {
-		estimator = std::shared_ptr<MECircular>(new MECircular(parent->get_moment_count()));
+		estimator = std::shared_ptr<MECircular>(new MECircular(ceil(count*3/2)));
 	}
 	return estimator.get();
 }
