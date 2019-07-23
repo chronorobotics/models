@@ -8,16 +8,19 @@ using namespace std;
 
 CMoments::CMoments(int idd) :
 	cluster_count(2),
-	pos_estimator(this),
-	neg_estimator(this),
-	pos_density(this),
-	neg_density(this)
+	pos_estimator(),
+	neg_estimator(),
+	pos_density(),
+	neg_density()
 {
 	id=idd;
 	measurements = 0;
 	type = TT_MOMENTS;
 
 	numSamples = 0;
+
+	pos_estimator.reset(new MomentEstimator(this));
+	neg_estimator.reset(new MomentEstimator(this));
 }
 
 void CMoments::init(int iMaxPeriod,int elements,int numClasses)
@@ -67,9 +70,9 @@ int CMoments::add(uint32_t time,float state)
 	float phase = time_to_phase(time);
 
 	if (state > 0.5) {
-		pos_estimator.add_point(phase);
+		pos_estimator->add_point(phase);
 	} else {
-		neg_estimator.add_point(phase);
+		neg_estimator->add_point(phase);
 	}
 	measurements++;
 	return 0;
@@ -77,11 +80,14 @@ int CMoments::add(uint32_t time,float state)
 
 void CMoments::update(int modelOrder, unsigned int* times, float* signal, int length)
 {
-	RightSide pos_rs(pos_estimator);
-	RightSide neg_rs(neg_estimator);
+	RightSide pos_rs(*pos_estimator);
+	RightSide neg_rs(*neg_estimator);
 
-	pos_density.calculate(pos_rs);
-	neg_density.calculate(neg_rs);
+	pos_density.reset(new DPVonMises(this));
+	neg_density.reset(new DPVonMises(this));
+
+	pos_density->calculate(pos_rs);
+	neg_density->calculate(neg_rs);
 
 	ofstream myfile0("0.txt");
 	ofstream myfile1("1.txt");
@@ -99,9 +105,9 @@ void CMoments::print(bool verbose)
 	std::cout << "Model " << id << " Size: " << measurements << " " << std::endl;
 	if (verbose) {
 		std::cout << "positive: ";
-		pos_density.print();
+		pos_density->print();
 		std::cout << std::endl << "negative: ";
-		neg_density.print();
+		neg_density->print();
 		std::cout << std::endl;
 	}
 }
@@ -110,8 +116,8 @@ float CMoments::estimate(uint32_t time)
 {
 	float phase = time_to_phase(time);
 
-	float pd = pos_density.density_at(phase);
-	//float nd = neg_density.density_at(phase);
+	float pd = pos_density->density_at(phase);
+	//float nd = neg_density->density_at(phase);
 
 	//return pd / (pd + nd);
 	return pd;
@@ -141,14 +147,14 @@ int CMoments::load(const char* name)
 
 int CMoments::save(FILE* file,bool lossy)
 {
-	fwrite(&pos_density.count, sizeof(int), 1, file);
-	fwrite(&pos_density.kappa[0], sizeof(double), pos_density.count, file);
-	fwrite(&pos_density.mu[0], sizeof(double), pos_density.count, file);
-	fwrite(&pos_density.weight[0], sizeof(double), pos_density.count, file);
-	fwrite(&neg_density.count, sizeof(int), 1, file);
-	fwrite(&neg_density.kappa[0], sizeof(double), neg_density.count, file);
-	fwrite(&neg_density.mu[0], sizeof(double), neg_density.count, file);
-	fwrite(&neg_density.weight[0], sizeof(double), neg_density.count, file);
+	fwrite(&pos_density->count, sizeof(int), 1, file);
+	fwrite(&pos_density->kappa[0], sizeof(double), pos_density->count, file);
+	fwrite(&pos_density->mu[0], sizeof(double), pos_density->count, file);
+	fwrite(&pos_density->weight[0], sizeof(double), pos_density->count, file);
+	fwrite(&neg_density->count, sizeof(int), 1, file);
+	fwrite(&neg_density->kappa[0], sizeof(double), neg_density->count, file);
+	fwrite(&neg_density->mu[0], sizeof(double), neg_density->count, file);
+	fwrite(&neg_density->weight[0], sizeof(double), neg_density->count, file);
 	return 0;
 }
 
@@ -156,15 +162,15 @@ int CMoments::load(FILE* file)
 {
 	int cnt;
 	fread(&cnt, sizeof(int), 1, file);
-	pos_density.reset(cnt);
-	fread(&pos_density.kappa[0], sizeof(double), cnt, file);
-	fread(&pos_density.mu[0], sizeof(double), cnt, file);
-	fread(&pos_density.weight[0], sizeof(double), cnt, file);
+	pos_density.reset(new DPVonMises(this, cnt));
+	fread(&pos_density->kappa[0], sizeof(double), cnt, file);
+	fread(&pos_density->mu[0], sizeof(double), cnt, file);
+	fread(&pos_density->weight[0], sizeof(double), cnt, file);
 	fread(&cnt, sizeof(int), 1, file);
-	neg_density.reset(cnt);
-	fread(&neg_density.kappa[0], sizeof(double), cnt, file);
-	fread(&neg_density.mu[0], sizeof(double), cnt, file);
-	fread(&neg_density.weight[0], sizeof(double), cnt, file);
+	neg_density.reset(new DPVonMises(this, cnt));
+	fread(&neg_density->kappa[0], sizeof(double), cnt, file);
+	fread(&neg_density->mu[0], sizeof(double), cnt, file);
+	fread(&neg_density->weight[0], sizeof(double), cnt, file);
 	return 0;
 }
 
@@ -173,17 +179,17 @@ int CMoments::exportToArray(double* array, int maxLen)
 {
 	int pos = 0;
 	array[pos++] = type;
-	array[pos++] = pos_density.count;
-	for (int i = 0; i <= pos_density.count; ++i) {
-		array[pos++] = pos_density.kappa[i];
-		array[pos++] = pos_density.mu[i];
-		array[pos++] = pos_density.weight[i];
+	array[pos++] = pos_density->count;
+	for (int i = 0; i <= pos_density->count; ++i) {
+		array[pos++] = pos_density->kappa[i];
+		array[pos++] = pos_density->mu[i];
+		array[pos++] = pos_density->weight[i];
 	}
-	array[pos++] = neg_density.count;
-	for (int i = 0; i <= neg_density.count; ++i) {
-		array[pos++] = neg_density.kappa[i];
-		array[pos++] = neg_density.mu[i];
-		array[pos++] = neg_density.weight[i];
+	array[pos++] = neg_density->count;
+	for (int i = 0; i <= neg_density->count; ++i) {
+		array[pos++] = neg_density->kappa[i];
+		array[pos++] = neg_density->mu[i];
+		array[pos++] = neg_density->weight[i];
 	}
 	return pos;
 }
@@ -195,18 +201,18 @@ int CMoments::importFromArray(double* array, int len)
 	if (type != TT_NONE) std::cerr << "Error loading the model, type mismatch." << std::endl;
 	int cnt;
 	cnt = array[pos++];
-	pos_density.reset(cnt);
-	for (int i = 0; i <= pos_density.count; ++i) {
-		pos_density.kappa[i] = array[pos++];
-		pos_density.mu[i] = array[pos++];
-		pos_density.weight[i] = array[pos++];
+	pos_density.reset(new DPVonMises(this, cnt));
+	for (int i = 0; i <= pos_density->count; ++i) {
+		pos_density->kappa[i] = array[pos++];
+		pos_density->mu[i] = array[pos++];
+		pos_density->weight[i] = array[pos++];
 	}
 	cnt = array[pos++];
-	neg_density.reset(cnt);
-	for (int i = 0; i <= pos_density.count; ++i) {
-		neg_density.kappa[i] = array[pos++];
-		neg_density.mu[i] = array[pos++];
-		neg_density.weight[i] = array[pos++];
+	neg_density.reset(new DPVonMises(this, cnt));
+	for (int i = 0; i <= pos_density->count; ++i) {
+		neg_density->kappa[i] = array[pos++];
+		neg_density->mu[i] = array[pos++];
+		neg_density->weight[i] = array[pos++];
 	}
 	return pos;
 }

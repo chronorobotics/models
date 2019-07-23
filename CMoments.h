@@ -7,6 +7,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdint.h>
+#include <memory>
 #include "CTemporal.h"
 
 #include "moments/moment_estimator.h"
@@ -59,10 +60,10 @@ class CMoments: public CTemporal
 				float v;
 		};
 
-		MomentEstimator pos_estimator;
-		MomentEstimator neg_estimator;
-		DPVonMises pos_density;
-		DPVonMises neg_density;
+		std::unique_ptr<MomentEstimator> pos_estimator;
+		std::unique_ptr<MomentEstimator> neg_estimator;
+		std::unique_ptr<DPVonMises> pos_density;
+		std::unique_ptr<DPVonMises> neg_density;
 
 		TimeSample sampleArray[1000000];
 		int numSamples;
