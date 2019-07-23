@@ -60,10 +60,16 @@ void DPVonMises::calculate()
 		iter++;
 		status = gsl_multiroot_fsolver_iterate(s);
 
-		std::cout << "iter "<< iter <<" "<< gsl_vector_get(s->f, 0) << " " << gsl_vector_get(s->f, 1) << " " << gsl_vector_get(s->f, 2) << " "
-							<< gsl_vector_get(s->f, 3) << " " << gsl_vector_get(s->f, 4) << " " << gsl_vector_get(s->f, 5) << std::endl;
-		std::cout << gsl_vector_get(s->x, 0) << " " << gsl_vector_get(s->x, 1) << " " << gsl_vector_get(s->x, 2) << " "
-							<< gsl_vector_get(s->x, 3) << " " << gsl_vector_get(s->x, 4) << " " << gsl_vector_get(s->x, 5) << std::endl;
+		std::cout << "iter " << iter << std::endl;
+		std::cout << "    residuum:";
+		for (int i = 0; i < n; ++i) {
+			std::cout << " " << gsl_vector_get(s->f, i);
+		}
+		std::cout << std::endl << "    value:";
+		for (int i = 0; i < n; ++i) {
+			std::cout << " " << gsl_vector_get(s->x, i);
+		}
+		std::cout << std::endl;
 
 		if (status) {
 			break;
