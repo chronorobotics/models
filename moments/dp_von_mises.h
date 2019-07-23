@@ -26,6 +26,11 @@ class DPVonMises : public DensityParams
 			return 3;
 		}
 
+		void exportToArray(double* array, int maxLen, int& pos);
+		void importFromArray(double* array, int len, int& pos);
+		int save(FILE* file, bool lossy = false);
+		int load(FILE* file);
+
 		static double lnhyp(double x);
 		static double hyp(double x);
 

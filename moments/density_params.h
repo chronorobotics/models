@@ -17,6 +17,11 @@ class DensityParams {
 		virtual void print() = 0;
 		virtual void reset(int count_) = 0;
 
+		virtual void exportToArray(double* array, int maxLen, int& pos) = 0;
+		virtual void importFromArray(double* array, int len, int& pos) = 0;
+		virtual int save(FILE* file, bool lossy = false) = 0;
+		virtual int load(FILE* file) = 0;
+
 	protected:
 		CMoments* parent;
 };

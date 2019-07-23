@@ -125,3 +125,46 @@ int DPVonMises::moment_f(const gsl_vector* x, void* params, gsl_vector* f) {
 
 	return GSL_SUCCESS;
 }
+
+int DPVonMises::save(FILE* file,bool lossy)
+{
+	fwrite(&count, sizeof(int), 1, file);
+	fwrite(&kappa[0], sizeof(double), count, file);
+	fwrite(&mu[0], sizeof(double), count, file);
+	fwrite(&weight[0], sizeof(double), count, file);
+	return 0;
+}
+
+int DPVonMises::load(FILE* file)
+{
+	int cnt;
+	fread(&cnt, sizeof(int), 1, file);
+	reset(cnt);
+	fread(&kappa[0], sizeof(double), cnt, file);
+	fread(&mu[0], sizeof(double), cnt, file);
+	fread(&weight[0], sizeof(double), cnt, file);
+	return 0;
+}
+
+
+void DPVonMises::exportToArray(double* array, int maxLen, int& pos)
+{
+	array[pos++] = count;
+	for (int i = 0; i <= count; ++i) {
+		array[pos++] = kappa[i];
+		array[pos++] = mu[i];
+		array[pos++] = weight[i];
+	}
+}
+
+void DPVonMises::importFromArray(double* array, int len, int& pos)
+{
+	int cnt;
+	cnt = array[pos++];
+	reset(cnt);
+	for (int i = 0; i <= count; ++i) {
+		kappa[i] = array[pos++];
+		mu[i] = array[pos++];
+		weight[i] = array[pos++];
+	}
+}
