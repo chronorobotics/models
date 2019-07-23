@@ -27,14 +27,16 @@ class DPVonMises : public DensityParams
 		}
 
 		void exportToArray(double* array, int maxLen, int& pos);
-		void importFromArray(double* array, int len, int& pos);
 		int save(FILE* file, bool lossy = false);
-		int load(FILE* file);
 
 		static double lnhyp(double x);
 		static double hyp(double x);
 
 		static int moment_f(const gsl_vector* x, void* params, gsl_vector* f);
+
+	protected:
+		void importFromArray(double* array, int len, int& pos);
+		int load(FILE* file);
 };
 
 #endif // DP_VON_MISES_H

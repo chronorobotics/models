@@ -126,8 +126,11 @@ int DPVonMises::moment_f(const gsl_vector* x, void* params, gsl_vector* f) {
 	return GSL_SUCCESS;
 }
 
-int DPVonMises::save(FILE* file,bool lossy)
+int DPVonMises::save(FILE* file, bool lossy)
 {
+	Distribution type = VON_MISES;
+	fwrite(&type, sizeof(Distribution), 1, file);
+
 	fwrite(&count, sizeof(int), 1, file);
 	fwrite(&kappa[0], sizeof(double), count, file);
 	fwrite(&mu[0], sizeof(double), count, file);
@@ -149,6 +152,7 @@ int DPVonMises::load(FILE* file)
 
 void DPVonMises::exportToArray(double* array, int maxLen, int& pos)
 {
+	array[pos++] = (double) VON_MISES;
 	array[pos++] = count;
 	for (int i = 0; i <= count; ++i) {
 		array[pos++] = kappa[i];

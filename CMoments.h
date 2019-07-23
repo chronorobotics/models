@@ -11,7 +11,7 @@
 #include "CTemporal.h"
 
 #include "moments/moment_estimator.h"
-#include "moments/dp_von_mises.h"
+#include "moments/density_params.h"
 
 #define MAX_ID_LENGTH 100
 	
@@ -62,8 +62,8 @@ class CMoments: public CTemporal
 
 		std::unique_ptr<MomentEstimator> pos_estimator;
 		std::unique_ptr<MomentEstimator> neg_estimator;
-		std::unique_ptr<DPVonMises> pos_density;
-		std::unique_ptr<DPVonMises> neg_density;
+		std::unique_ptr<DensityParams> pos_density;
+		std::unique_ptr<DensityParams> neg_density;
 
 		TimeSample sampleArray[1000000];
 		int numSamples;
