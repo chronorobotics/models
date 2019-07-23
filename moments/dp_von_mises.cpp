@@ -1,4 +1,5 @@
 #include <gsl/gsl_sf_bessel.h>
+#include <ctime>
 #include "../CMoments.h"
 
 #include "dp_von_mises.h"
@@ -22,7 +23,7 @@ DPVonMises::~DPVonMises() {
 
 MomentEstimator* DPVonMises::get_moment_estimator() {
 	if (!estimator.get()) {
-		estimator = std::shared_ptr<MECircular>(new MECircular(ceil(count*3/2)));
+		estimator = std::shared_ptr<MECircular>(new MECircular(ceil(float(count)*3/2)));
 	}
 	return estimator.get();
 }
@@ -38,55 +39,63 @@ void DPVonMises::calculate()
 {
 	EquationParams ep(estimator->get_moments(), count, estimator->get_moment_count());
 	int status;
-	int iter = 0;
+	int tries = 0;
+	srandom(time(0));
 
-	const size_t n = ep.right_side.size();
-	std::cout << n << " " << count << std::endl;
-	gsl_multiroot_function f = {&DPVonMises::moment_f, n, &ep};
+	do {
+		tries++;
+		int iter = 0;
+		const size_t n = ep.right_side.size();
+		gsl_multiroot_function f = {&DPVonMises::moment_f, n, &ep};
 
-	gsl_vector* x = gsl_vector_alloc(n);
-	for (int i = 0; i < n; ++i) {
-		gsl_vector_set(x, i, 1.012431 - i*0.10347);
-	}
-
-	gsl_multiroot_fsolver* s;
-	const gsl_multiroot_fsolver_type* T;
-	T = gsl_multiroot_fsolver_hybrids;
-	s = gsl_multiroot_fsolver_alloc (T, n);
-	gsl_multiroot_fsolver_set (s, &f, x);
-
-	do
-	{
-		iter++;
-		status = gsl_multiroot_fsolver_iterate(s);
-
-		std::cout << "iter " << iter << std::endl;
-		std::cout << "    residuum:";
+		gsl_vector* x = gsl_vector_alloc(n);
 		for (int i = 0; i < n; ++i) {
-			std::cout << " " << gsl_vector_get(s->f, i);
-		}
-		std::cout << std::endl << "    value:";
-		for (int i = 0; i < n; ++i) {
-			std::cout << " " << gsl_vector_get(s->x, i);
-		}
-		std::cout << std::endl;
-
-		if (status) {
-			break;
+			gsl_vector_set(x, i, float(rand()) / RAND_MAX * 2);
 		}
 
-		status = gsl_multiroot_test_residual (s->f, 0.07);
-	}	while (status == GSL_CONTINUE && iter < 1000);
+		gsl_multiroot_fsolver* s;
+		const gsl_multiroot_fsolver_type* T;
+		T = gsl_multiroot_fsolver_hybrids;
+		s = gsl_multiroot_fsolver_alloc (T, n);
+		gsl_multiroot_fsolver_set (s, &f, x);
 
-	printf ("status = %s\n", gsl_strerror (status));
-	for (int i = 0; i < count; ++i) {
-		kappa[i]  = lnhyp(gsl_vector_get(s->x, 3*i));
-		mu[i]     = gsl_vector_get(s->x, 3*i + 1);
-		weight[i] = hyp(gsl_vector_get(s->x, 3*i + 2));
+		do
+		{
+			iter++;
+			status = gsl_multiroot_fsolver_iterate(s);
+
+			/*std::cout << "iter " << iter << std::endl;
+			std::cout << "    residuum:";
+			for (int i = 0; i < n; ++i) {
+				std::cout << " " << gsl_vector_get(s->f, i);
+			}
+			std::cout << std::endl << "    value:";
+			for (int i = 0; i < n; ++i) {
+				std::cout << " " << gsl_vector_get(s->x, i);
+			}
+			std::cout << std::endl;*/
+
+			if (status) {
+				break;
+			}
+
+			status = gsl_multiroot_test_residual (s->f, 1E-7);
+		}	while (status == GSL_CONTINUE && iter < 1000);
+
+		std::cout << "status = " << gsl_strerror (status) << ", tries = " << tries << std::endl;
+		for (int i = 0; i < count; ++i) {
+			kappa[i]  = lnhyp(gsl_vector_get(s->x, 3*i));
+			mu[i]     = gsl_vector_get(s->x, 3*i + 1);
+			weight[i] = hyp(gsl_vector_get(s->x, 3*i + 2));
+		}
+
+		gsl_multiroot_fsolver_free(s);
+		gsl_vector_free(x);
+	} while (status != GSL_SUCCESS && tries < 100);
+
+	if (status != GSL_SUCCESS) {
+		std::cout << "ERROR: Solution not found!" << std::endl;
 	}
-
-	gsl_multiroot_fsolver_free(s);
-	gsl_vector_free(x);
 }
 
 double DPVonMises::density_at(uint32_t time) {
@@ -127,6 +136,10 @@ int DPVonMises::moment_f(const gsl_vector* x, void* params, gsl_vector* f) {
 			double x_mu     = gsl_vector_get(x, 3*j + 1);
 			double x_weight = hyp(gsl_vector_get(x, 3*j + 2));
 
+			if (isnan(x_kappa) || isnan(x_mu) || isnan(x_weight)) {
+				return GSL_EDOM;
+			}
+
 			double foo = gsl_sf_bessel_In(i+1, x_kappa) / gsl_sf_bessel_I0(x_kappa);
 
 			y_re += x_weight * foo * cos((i+1)*x_mu);
@@ -134,7 +147,7 @@ int DPVonMises::moment_f(const gsl_vector* x, void* params, gsl_vector* f) {
 		}
 
 		gsl_vector_set (f, 2*i    , y_re - ep->right_side[2*i]);
-		if (2*i + 1 < ep->right_side.size()) {
+		if (2*i + 1 < ep->cluster_count*3) {
 			gsl_vector_set (f, 2*i + 1, y_im - ep->right_side[2*i + 1]);
 		}
 
