@@ -44,13 +44,14 @@ void DPVonMises::calculate()
 
 	do {
 		tries++;
+		ep.min_kappa = tan(float(rand()) / RAND_MAX * 1.55);
 		int iter = 0;
 		const size_t n = ep.right_side.size();
 		gsl_multiroot_function f = {&DPVonMises::moment_f, n, &ep};
 
 		gsl_vector* x = gsl_vector_alloc(n);
 		for (int i = 0; i < n; ++i) {
-			gsl_vector_set(x, i, float(rand()) / RAND_MAX * 2);
+			gsl_vector_set(x, i, float(rand()) / RAND_MAX * 6);
 		}
 
 		gsl_multiroot_fsolver* s;
@@ -79,19 +80,21 @@ void DPVonMises::calculate()
 				break;
 			}
 
-			status = gsl_multiroot_test_residual (s->f, 1E-7);
+			status = gsl_multiroot_test_residual (s->f, 0.1);
 		}	while (status == GSL_CONTINUE && iter < 1000);
 
-		std::cout << "status = " << gsl_strerror (status) << ", tries = " << tries << std::endl;
+		std::cout << "\33[2K\rstatus = " << gsl_strerror (status) << ", tries = " << tries << std::flush;
 		for (int i = 0; i < count; ++i) {
-			kappa[i]  = lnhyp(gsl_vector_get(s->x, 3*i));
+			kappa[i]  = lnhyp(gsl_vector_get(s->x, 3*i), ep.min_kappa);
 			mu[i]     = gsl_vector_get(s->x, 3*i + 1);
 			weight[i] = hyp(gsl_vector_get(s->x, 3*i + 2));
 		}
 
 		gsl_multiroot_fsolver_free(s);
 		gsl_vector_free(x);
-	} while (status != GSL_SUCCESS && tries < 100);
+	} while (status != GSL_SUCCESS /*&& tries < 100*/);
+
+	std::cout << std::endl;
 
 	if (status != GSL_SUCCESS) {
 		std::cout << "ERROR: Solution not found!" << std::endl;
@@ -107,9 +110,9 @@ double DPVonMises::density_at(uint32_t time) {
 	return result;
 }
 
-double DPVonMises::lnhyp(double x) {
+double DPVonMises::lnhyp(double x, double min_kappa) {
 	//return log(1 + x/2 + sqrt(x*x + 4)/2);
-	return log(x*x + 1);
+	return log(x*x + 1) + min_kappa;
 }
 
 double DPVonMises::hyp(double x) {
@@ -132,7 +135,7 @@ int DPVonMises::moment_f(const gsl_vector* x, void* params, gsl_vector* f) {
 		double y_im = 0;
 
 		for (int j = ep->cluster_count - 1; j >= 0; --j) {
-			double x_kappa  = lnhyp(gsl_vector_get(x, 3*j));
+			double x_kappa  = lnhyp(gsl_vector_get(x, 3*j), ep->min_kappa);
 			double x_mu     = gsl_vector_get(x, 3*j + 1);
 			double x_weight = hyp(gsl_vector_get(x, 3*j + 2));
 
@@ -206,7 +209,8 @@ void DPVonMises::importFromArray(double* array, int len, int& pos)
 DPVonMises::EquationParams::EquationParams(std::vector<double> right_side_, int cluster_count_, int moment_count_) :
 	right_side(right_side_),
 	cluster_count(cluster_count_),
-	moment_count(moment_count_)
+	moment_count(moment_count_),
+	min_kappa()
 {
 
 }

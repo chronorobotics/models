@@ -39,9 +39,10 @@ class DPVonMises : public DensityParams
 				std::vector<double> right_side;
 				int cluster_count;
 				int moment_count;
+				int min_kappa;
 		};
 
-		static double lnhyp(double x);
+		static double lnhyp(double x, double min_kappa);
 		static double hyp(double x);
 
 		static int moment_f(const gsl_vector* x, void* params, gsl_vector* f);
