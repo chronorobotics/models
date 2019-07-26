@@ -44,7 +44,7 @@ void DPVonMises::calculate()
 
 	do {
 		tries++;
-		ep.min_kappa = tan(float(rand()) / RAND_MAX * 1.55);
+		ep.min_kappa = tan(float(rand()) / RAND_MAX * M_PI_2);
 		int iter = 0;
 		const size_t n = ep.right_side.size();
 		gsl_multiroot_function f = {&DPVonMises::moment_f, n, &ep};
@@ -143,7 +143,13 @@ int DPVonMises::moment_f(const gsl_vector* x, void* params, gsl_vector* f) {
 				return GSL_EDOM;
 			}
 
-			double foo = gsl_sf_bessel_In(i+1, x_kappa) / gsl_sf_bessel_I0(x_kappa);
+			double foo;
+
+			if (x_kappa > 500) {
+				foo = 1;
+			} else {
+				foo = gsl_sf_bessel_In(i+1, x_kappa) / gsl_sf_bessel_I0(x_kappa);
+			}
 
 			y_re += x_weight * foo * cos((i+1)*x_mu);
 			y_im += x_weight * foo * sin((i+1)*x_mu);
