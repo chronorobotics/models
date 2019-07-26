@@ -38,66 +38,26 @@ void DPVonMises::reset(int count_) {
 void DPVonMises::calculate()
 {
 	EquationParams ep(estimator->get_moments(), count, estimator->get_moment_count());
-	int status;
-	int tries = 0;
+	const size_t n = ep.right_side.size();
+	//int status;
+	//int tries = 0;
 	srandom(time(0));
+	std::vector<double> buf1;
+	std::vector<double> buf2;
 
-	do {
-		tries++;
-		ep.min_kappa = tan(float(rand()) / RAND_MAX * M_PI_2);
-		int iter = 0;
-		const size_t n = ep.right_side.size();
-		gsl_multiroot_function f = {&DPVonMises::moment_f, n, &ep};
+	buf1.reserve(n);
+	buf2.resize(n);
 
-		gsl_vector* x = gsl_vector_alloc(n);
-		for (int i = 0; i < n; ++i) {
-			gsl_vector_set(x, i, float(rand()) / RAND_MAX * 6);
-		}
+	for (int i = n-1; i >= 0; --i) {
+		buf1.push_back(float(rand()) / RAND_MAX * 6);
+	}
 
-		gsl_multiroot_fsolver* s;
-		const gsl_multiroot_fsolver_type* T;
-		T = gsl_multiroot_fsolver_hybrids;
-		s = gsl_multiroot_fsolver_alloc (T, n);
-		gsl_multiroot_fsolver_set (s, &f, x);
+	std::vector<double>* result = fixed_point_iteration(&buf1, &buf2, ep);
 
-		do
-		{
-			iter++;
-			status = gsl_multiroot_fsolver_iterate(s);
-
-			/*std::cout << "iter " << iter << std::endl;
-			std::cout << "    residuum:";
-			for (int i = 0; i < n; ++i) {
-				std::cout << " " << gsl_vector_get(s->f, i);
-			}
-			std::cout << std::endl << "    value:";
-			for (int i = 0; i < n; ++i) {
-				std::cout << " " << gsl_vector_get(s->x, i);
-			}
-			std::cout << std::endl;*/
-
-			if (status) {
-				break;
-			}
-
-			status = gsl_multiroot_test_residual (s->f, 0.1);
-		}	while (status == GSL_CONTINUE && iter < 1000);
-
-		std::cout << "\33[2K\rstatus = " << gsl_strerror (status) << ", tries = " << tries << std::flush;
-		for (int i = 0; i < count; ++i) {
-			kappa[i]  = lnhyp(gsl_vector_get(s->x, 3*i), ep.min_kappa);
-			mu[i]     = gsl_vector_get(s->x, 3*i + 1);
-			weight[i] = hyp(gsl_vector_get(s->x, 3*i + 2));
-		}
-
-		gsl_multiroot_fsolver_free(s);
-		gsl_vector_free(x);
-	} while (status != GSL_SUCCESS /*&& tries < 100*/);
-
-	std::cout << std::endl;
-
-	if (status != GSL_SUCCESS) {
-		std::cout << "ERROR: Solution not found!" << std::endl;
+	for (int i = 0; i < count; ++i) {
+		kappa[i]  = (*result)[3*i];
+		mu[i]     = (*result)[3*i + 1];
+		weight[i] = (*result)[3*i + 2];
 	}
 }
 
@@ -219,4 +179,108 @@ DPVonMises::EquationParams::EquationParams(std::vector<double> right_side_, int 
 	min_kappa()
 {
 
+}
+
+double DPVonMises::InI0(int n, double kappa) const {
+	return gsl_sf_bessel_In(n, kappa) / gsl_sf_bessel_I0(kappa);
+}
+
+double DPVonMises::dInI0(int n, double kappa) const {
+	double i0 = gsl_sf_bessel_I0(kappa);
+	return (i0*(gsl_sf_bessel_In(n-1, kappa) + gsl_sf_bessel_In(n+1, kappa)) + 2*gsl_sf_bessel_In(n, kappa)*gsl_sf_bessel_I1(kappa)) / (2*i0*i0);
+}
+
+double DPVonMises::segsgn(double x) const {
+	double result = sqrt(1 + x*x);
+	if (x < 0) {
+		return -result;
+	} else {
+		return result;
+	}
+}
+
+double DPVonMises::fpi_d(int eq, std::vector<double> *now, const EquationParams &ep) const {
+	int i = eq / 2;
+	int j = eq / 3;
+
+	double x_kappa  = (*now)[3*j];
+	double x_mu     = (*now)[3*j + 1];
+	double x_weight = (*now)[3*j + 2];
+
+	switch (eq % 3) {
+		case 0: {
+			double foo = dInI0(i+1, x_kappa) * x_weight;
+			if (i % 2) {
+				return sin((i+1)*x_mu) * foo;
+			} else {
+				return cos((i+1)*x_mu) * foo;
+			}
+		} break;
+		case 1: {
+			double foo = InI0(i+1, x_kappa) * x_weight * (i+1);
+			if (i % 2) {
+				return cos((i+1)*x_mu) * foo;
+			} else {
+				return -sin((i+1)*x_mu) * foo;
+			}
+		} break;
+		case 2: {
+			double foo = InI0(i+1, x_kappa);
+			if (i % 2) {
+				return sin((i+1)*x_mu) * foo;
+			} else {
+				return cos((i+1)*x_mu) * foo;
+			}
+		} break;
+		default:
+			return 0;
+			break;
+	}
+}
+
+std::vector<double>* DPVonMises::fixed_point_iteration(std::vector<double>* now, std::vector<double>* next, const EquationParams& ep) const {
+	for (int iter = 0; iter < 100; ++iter) {
+
+		std::cout << "iter " << iter << std::endl;
+		std::cout << std::endl << "    value:";
+		for (int i = 0; i < now->size(); ++i) {
+			std::cout << " " << (*now)[i];
+		}
+		std::cout << std::endl;
+
+		for (int i = ep.moment_count - 1; i >= 0; --i) {
+			double y_re = 0;
+			double y_im = 0;
+
+			for (int j = ep.cluster_count - 1; j >= 0; --j) {
+				double x_kappa  = (*now)[3*j];
+				double x_mu     = (*now)[3*j + 1];
+				double x_weight = (*now)[3*j + 2];
+
+				double foo = InI0(i+1, x_kappa);
+				double sx = sin((i+1)*x_mu);
+				double cx = cos((i+1)*x_mu);
+
+				y_re += x_weight * foo * cx;
+				y_im += x_weight * foo * sx;
+			}
+
+			int var1 = 2*i;
+			int var2 = 2*i + 1;
+
+			y_re = (y_re - ep.right_side[var1]) / (i+1);
+			y_im = (y_im - ep.right_side[var2]) / (i+1);
+
+
+			(*next)[var1] = (*now)[var1] - y_re/segsgn(fpi_d(var1, now, ep));
+			if (var2 < ep.cluster_count*3) {
+				(*next)[var2] = (*now)[var2] - y_im/segsgn(fpi_d(var2, now, ep));
+			}
+
+		}
+
+		std::swap(now, next);
+	}
+
+	return next;
 }

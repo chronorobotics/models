@@ -47,6 +47,13 @@ class DPVonMises : public DensityParams
 		int load(FILE* file);
 
 		std::shared_ptr<MECircular> estimator;
+
+	private:
+		double InI0(int n, double kappa) const;
+		double dInI0(int n, double kappa) const;
+		double segsgn(double x) const;
+		double fpi_d(int eq, std::vector<double>* now, const EquationParams& ep) const;
+		std::vector<double>* fixed_point_iteration(std::vector<double>* now, std::vector<double>* next, const EquationParams& ep) const;
 };
 
 #endif // DP_VON_MISES_H
