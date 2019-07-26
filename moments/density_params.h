@@ -12,8 +12,6 @@ class DensityParams {
 		~DensityParams();
 		int count;
 
-		virtual int get_param_count() = 0;
-
 		virtual MomentEstimator* get_moment_estimator() = 0;
 		virtual void calculate() = 0;
 		virtual double density_at(uint32_t time) = 0;
