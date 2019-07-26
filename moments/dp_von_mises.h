@@ -25,10 +25,6 @@ class DPVonMises : public DensityParams
 		void print();
 		void reset(int count_);
 
-		int get_param_count() {
-			return 3;
-		}
-
 		void exportToArray(double* array, int maxLen, int& pos);
 		int save(FILE* file, bool lossy = false);
 
