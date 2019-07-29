@@ -88,7 +88,7 @@ void DPDoubleVonMises::calculate()
 				break;
 			}
 
-			status = gsl_multiroot_test_residual (s->f, 0.1);
+			status = gsl_multiroot_test_residual (s->f, 0.05);
 		}	while (status == GSL_CONTINUE && iter < 1000);
 
 		std::cout << "\33[2K\rstatus = " << gsl_strerror (status) << ", tries = " << tries << std::flush;
@@ -181,7 +181,7 @@ int DPDoubleVonMises::moment_f(const gsl_vector* x, void* params, gsl_vector* f)
 
 int DPDoubleVonMises::save(FILE* file, bool lossy)
 {
-	Distribution type = VON_MISES;
+	Distribution type = DOUBLE_VON_MISES;
 	fwrite(&type, sizeof(Distribution), 1, file);
 
 	fwrite(&count, sizeof(int), 1, file);
@@ -209,7 +209,7 @@ int DPDoubleVonMises::load(FILE* file)
 
 void DPDoubleVonMises::exportToArray(double* array, int maxLen, int& pos)
 {
-	array[pos++] = (double) VON_MISES;
+	array[pos++] = (double) DOUBLE_VON_MISES;
 	array[pos++] = count;
 	for (int i = 0; i <= count; ++i) {
 		array[pos++] = kappa[i];
