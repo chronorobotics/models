@@ -46,7 +46,7 @@ void DPVonMises::calculate()
 		tries++;
 		ep.min_kappa = tan(float(rand()) / RAND_MAX * M_PI_2);
 		int iter = 0;
-		const size_t n = ep.right_side.size();
+		const size_t n = count*3;
 		gsl_multiroot_function f = {&DPVonMises::moment_f, n, &ep};
 
 		gsl_vector* x = gsl_vector_alloc(n);
