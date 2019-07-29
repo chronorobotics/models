@@ -31,6 +31,7 @@ class MEBicircular : public MomentEstimator
 		std::vector<double> get_moments() const;
 
 		const std::vector<Index>& get_moment_indices() const;
+		int get_moment_count() const;
 
 	private:
 		int moment_count;
