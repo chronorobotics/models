@@ -5,7 +5,7 @@
 using namespace std;
 
 CMoments::CMoments(int idd) :
-	cluster_count(2),
+	cluster_count(1),
 	pos_estimator(),
 	neg_estimator(),
 	pos_density(),
@@ -17,8 +17,8 @@ CMoments::CMoments(int idd) :
 
 	numSamples = 0;
 
-	pos_density = DensityParams::create(this, DensityParams::DOUBLE_VON_MISES);
-	neg_density = DensityParams::create(this, DensityParams::DOUBLE_VON_MISES);
+	pos_density = DensityParams::create(this, DensityParams::SQDIST);
+	neg_density = DensityParams::create(this, DensityParams::SQDIST);
 
 	pos_estimator = pos_density->get_moment_estimator();
 	neg_estimator = neg_density->get_moment_estimator();
