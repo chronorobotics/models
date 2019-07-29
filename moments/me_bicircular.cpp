@@ -92,3 +92,7 @@ std::vector<double> MEBicircular::get_moments() const {
 const std::vector<MEBicircular::Index>& MEBicircular::get_moment_indices() const {
 	return moment_indices;
 }
+
+int MEBicircular::get_moment_count() const {
+	return moment_count;
+}

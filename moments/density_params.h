@@ -22,7 +22,8 @@ class DensityParams {
 		virtual int save(FILE* file, bool lossy = false) = 0;
 
 		enum Distribution {
-			VON_MISES = 0
+			VON_MISES = 0,
+			DOUBLE_VON_MISES
 		};
 
 		static std::unique_ptr<DensityParams> create(CMoments* parent, Distribution dist, int count = -1);

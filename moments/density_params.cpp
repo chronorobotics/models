@@ -3,6 +3,7 @@
 #include "density_params.h"
 
 #include "dp_von_mises.h"
+#include "dp_double_von_mises.h"
 
 DensityParams::DensityParams(CMoments* parent_, int count_) :
 	count(),
@@ -23,6 +24,9 @@ std::unique_ptr<DensityParams> DensityParams::create(CMoments* parent, Distribut
 	switch (dist) {
 		case VON_MISES:
 			return std::unique_ptr<DensityParams>(new DPVonMises(parent, count));
+			break;
+		case DOUBLE_VON_MISES:
+			return std::unique_ptr<DensityParams>(new DPDoubleVonMises(parent, count));
 			break;
 		default:
 			std::cerr << "Invalid Distribution " << (int) dist << std::endl;
