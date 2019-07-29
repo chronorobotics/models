@@ -47,12 +47,14 @@ void DPDoubleVonMises::calculate()
 	int tries = 0;
 	srandom(time(0));
 
+	std::cout << ep.moment_count << " " << ep.cluster_count << std::endl;
+
 	do {
 		tries++;
 		ep.min_kappa = tan(float(rand()) / RAND_MAX * M_PI_2);
 		ep.min_lambda = tan(float(rand()) / RAND_MAX * M_PI_2);
 		int iter = 0;
-		const size_t n = ep.right_side.size();
+		const size_t n = count*5;
 		gsl_multiroot_function f = {&DPDoubleVonMises::moment_f, n, &ep};
 
 		gsl_vector* x = gsl_vector_alloc(n);
@@ -71,7 +73,7 @@ void DPDoubleVonMises::calculate()
 			iter++;
 			status = gsl_multiroot_fsolver_iterate(s);
 
-			std::cout << "iter " << iter << std::endl;
+			/*std::cout << "iter " << iter << std::endl;
 			std::cout << "    residuum:";
 			for (int i = 0; i < n; ++i) {
 				std::cout << " " << gsl_vector_get(s->f, i);
@@ -80,7 +82,7 @@ void DPDoubleVonMises::calculate()
 			for (int i = 0; i < n; ++i) {
 				std::cout << " " << gsl_vector_get(s->x, i);
 			}
-			std::cout << std::endl;
+			std::cout << std::endl;*/
 
 			if (status) {
 				break;
@@ -89,7 +91,7 @@ void DPDoubleVonMises::calculate()
 			status = gsl_multiroot_test_residual (s->f, 0.1);
 		}	while (status == GSL_CONTINUE && iter < 1000);
 
-		std::cout << /*"\33[2K\" <<*/ "rstatus = " << gsl_strerror (status) << ", tries = " << tries << std::endl;
+		std::cout << "\33[2K\rstatus = " << gsl_strerror (status) << ", tries = " << tries << std::flush;
 		for (int i = 0; i < count; ++i) {
 			kappa[i]  = lnhyp(gsl_vector_get(s->x, 5*i), ep.min_kappa);
 			mu[i]     = gsl_vector_get(s->x, 5*i + 1);
@@ -100,7 +102,7 @@ void DPDoubleVonMises::calculate()
 
 		gsl_multiroot_fsolver_free(s);
 		gsl_vector_free(x);
-	} while (status != GSL_SUCCESS && tries < 1);
+	} while (status != GSL_SUCCESS /*&& tries < 1*/);
 
 	std::cout << std::endl;
 
@@ -153,17 +155,18 @@ int DPDoubleVonMises::moment_f(const gsl_vector* x, void* params, gsl_vector* f)
 				return GSL_EDOM;
 			}
 
-			double foo;
+			double foo = 1;
 
-			if (x_kappa > 500) {
-				foo = 1;
-			} else {
-				foo = gsl_sf_bessel_In(ep->indices[i].i1, x_kappa) * gsl_sf_bessel_In(ep->indices[i].i2, x_lambda)
-						/ (gsl_sf_bessel_I0(x_kappa) * gsl_sf_bessel_I0(x_lambda));
+			if (x_kappa < 500) {
+				foo *= gsl_sf_bessel_In(ep->indices[i].i1, x_kappa) / gsl_sf_bessel_I0(x_kappa);
 			}
 
-			y_re += x_weight * foo * cos(ep->indices[i].i1*x_mu) * cos(ep->indices[i].i2*x_nu);
-			y_im += x_weight * foo * sin(ep->indices[i].i1*x_mu) * sin(ep->indices[i].i2*x_nu);
+			if (x_lambda < 500) {
+				foo *= gsl_sf_bessel_In(ep->indices[i].i2, x_lambda) / gsl_sf_bessel_I0(x_lambda);
+			}
+
+			y_re += x_weight * foo * cos(ep->indices[i].i1*x_mu + ep->indices[i].i2*x_nu);
+			y_im += x_weight * foo * sin(ep->indices[i].i1*x_mu + ep->indices[i].i2*x_nu);
 		}
 
 		gsl_vector_set (f, 2*i    , y_re - ep->right_side[2*i]);
