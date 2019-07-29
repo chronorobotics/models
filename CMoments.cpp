@@ -5,7 +5,7 @@
 using namespace std;
 
 CMoments::CMoments(int idd) :
-	cluster_count(6),
+	cluster_count(2),
 	pos_estimator(),
 	neg_estimator(),
 	pos_density(),
@@ -76,7 +76,7 @@ int CMoments::add(uint32_t time,float state)
 void CMoments::update(int modelOrder, unsigned int* times, float* signal, int length)
 {
 	pos_density->calculate();
-	neg_density->calculate();
+	//neg_density->calculate();
 
 	ofstream myfile0("0.txt");
 	ofstream myfile1("1.txt");

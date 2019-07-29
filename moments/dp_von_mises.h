@@ -40,6 +40,8 @@ class DPVonMises : public DensityParams
 
 		static double lnhyp(double x, double min_kappa);
 		static double hyp(double x);
+		static double dlnhyp(double x);
+		static double dhyp(double x);
 
 		static int moment_f(const gsl_vector* x, void* params, gsl_vector* f);
 

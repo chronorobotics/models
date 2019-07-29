@@ -38,6 +38,7 @@ void DPVonMises::reset(int count_) {
 void DPVonMises::calculate()
 {
 	EquationParams ep(estimator->get_moments(), count, estimator->get_moment_count());
+	ep.min_kappa = 1;
 	const size_t n = ep.right_side.size();
 	//int status;
 	//int tries = 0;
@@ -55,9 +56,9 @@ void DPVonMises::calculate()
 	std::vector<double>* result = fixed_point_iteration(&buf1, &buf2, ep);
 
 	for (int i = 0; i < count; ++i) {
-		kappa[i]  = (*result)[3*i];
+		kappa[i]  = lnhyp((*result)[3*i], ep.min_kappa);
 		mu[i]     = (*result)[3*i + 1];
-		weight[i] = (*result)[3*i + 2];
+		weight[i] = hyp((*result)[3*i + 2]);
 	}
 }
 
@@ -77,6 +78,14 @@ double DPVonMises::lnhyp(double x, double min_kappa) {
 
 double DPVonMises::hyp(double x) {
 	return sqrt(x*x + 1)-1;
+}
+
+double DPVonMises::dlnhyp(double x) {
+	return 2*x / (x*x + 1);
+}
+
+double DPVonMises::dhyp(double x) {
+	return x / sqrt(x*x + 1);
 }
 
 void DPVonMises::print() {
@@ -199,17 +208,17 @@ double DPVonMises::segsgn(double x) const {
 	}
 }
 
-double DPVonMises::fpi_d(int eq, std::vector<double> *now, const EquationParams &ep) const {
+double DPVonMises::fpi_d(int eq, std::vector<double>* now, const EquationParams& ep) const {
 	int i = eq / 2;
 	int j = eq / 3;
 
-	double x_kappa  = (*now)[3*j];
+	double x_kappa  = lnhyp((*now)[3*j], ep.min_kappa);
 	double x_mu     = (*now)[3*j + 1];
 	double x_weight = (*now)[3*j + 2];
 
 	switch (eq % 3) {
 		case 0: {
-			double foo = dInI0(i+1, x_kappa) * x_weight;
+			double foo = dInI0(i+1, x_kappa) * hyp(x_weight) * dlnhyp((*now)[3*j]);
 			if (i % 2) {
 				return sin((i+1)*x_mu) * foo;
 			} else {
@@ -217,7 +226,7 @@ double DPVonMises::fpi_d(int eq, std::vector<double> *now, const EquationParams 
 			}
 		} break;
 		case 1: {
-			double foo = InI0(i+1, x_kappa) * x_weight * (i+1);
+			double foo = InI0(i+1, x_kappa) * hyp(x_weight) * (i+1);
 			if (i % 2) {
 				return cos((i+1)*x_mu) * foo;
 			} else {
@@ -225,7 +234,7 @@ double DPVonMises::fpi_d(int eq, std::vector<double> *now, const EquationParams 
 			}
 		} break;
 		case 2: {
-			double foo = InI0(i+1, x_kappa);
+			double foo = InI0(i+1, x_kappa) * dhyp(x_weight);
 			if (i % 2) {
 				return sin((i+1)*x_mu) * foo;
 			} else {
@@ -239,7 +248,9 @@ double DPVonMises::fpi_d(int eq, std::vector<double> *now, const EquationParams 
 }
 
 std::vector<double>* DPVonMises::fixed_point_iteration(std::vector<double>* now, std::vector<double>* next, const EquationParams& ep) const {
-	for (int iter = 0; iter < 100; ++iter) {
+	int iter = 0;
+	float dist = 10000;
+	while (dist > 0.1) {
 
 		std::cout << "iter " << iter << std::endl;
 		std::cout << std::endl << "    value:";
@@ -253,9 +264,9 @@ std::vector<double>* DPVonMises::fixed_point_iteration(std::vector<double>* now,
 			double y_im = 0;
 
 			for (int j = ep.cluster_count - 1; j >= 0; --j) {
-				double x_kappa  = (*now)[3*j];
+				double x_kappa  = lnhyp((*now)[3*j], ep.min_kappa);
 				double x_mu     = (*now)[3*j + 1];
-				double x_weight = (*now)[3*j + 2];
+				double x_weight = hyp((*now)[3*j + 2]);
 
 				double foo = InI0(i+1, x_kappa);
 				double sx = sin((i+1)*x_mu);
@@ -279,7 +290,14 @@ std::vector<double>* DPVonMises::fixed_point_iteration(std::vector<double>* now,
 
 		}
 
+		dist = 0;
+		for (int i = ep.cluster_count*3-1; i >= 0; --i) {
+			dist += ((*now)[i]-(*next)[i]) * ((*now)[i]-(*next)[i]);
+		}
+		dist = sqrt(dist);
+
 		std::swap(now, next);
+		iter++;
 	}
 
 	return next;
