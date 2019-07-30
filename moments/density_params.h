@@ -23,7 +23,8 @@ class DensityParams {
 
 		enum Distribution {
 			VON_MISES = 0,
-			DOUBLE_VON_MISES = 1
+			DOUBLE_VON_MISES = 1,
+			UNIFORM = 2
 		};
 
 		static std::unique_ptr<DensityParams> create(CMoments* parent, Distribution dist, int count = -1);

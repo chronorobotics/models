@@ -4,6 +4,7 @@
 
 #include "dp_von_mises.h"
 #include "dp_double_von_mises.h"
+#include "dp_uniform.h"
 
 DensityParams::DensityParams(CMoments* parent_, int count_) :
 	count(),
@@ -27,6 +28,9 @@ std::unique_ptr<DensityParams> DensityParams::create(CMoments* parent, Distribut
 			break;
 		case DOUBLE_VON_MISES:
 			return std::unique_ptr<DensityParams>(new DPDoubleVonMises(parent, count));
+			break;
+		case UNIFORM:
+			return std::unique_ptr<DensityParams>(new DPUniform(parent, count));
 			break;
 		default:
 			std::cerr << "Invalid Distribution " << (int) dist << std::endl;
