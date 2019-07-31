@@ -41,11 +41,11 @@ class CExpectation : public CTemporal
 	private:
 		int id;
 
-		static const int cluster_count = 1;
+		static int cluster_count;
 		static double time_to_phase(uint32_t time);
 
 		void expectation();
-		void maximisation();
+		double maximisation();
 
 		class Cluster {
 			public:

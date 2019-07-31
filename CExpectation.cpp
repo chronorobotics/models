@@ -7,6 +7,8 @@
 #include <gsl/gsl_sf_bessel.h>
 #include "CExpectation.h"
 
+int CExpectation::cluster_count = 6;
+
 CExpectation::CExpectation(int idd)
 {
 	id=idd;
@@ -22,6 +24,8 @@ CExpectation::CExpectation(int idd)
 	for (int i = 0; i < cluster_count; ++i) {
 		clusters.push_back(Cluster());
 		s += clusters[i].weight;
+		//clusters[i].kappa = 3 + float(rand())/RAND_MAX;
+		//clusters[i].mu = float(rand())/RAND_MAX;
 	}
 
 	for (int i = 0; i < cluster_count; ++i) {
@@ -76,10 +80,12 @@ int CExpectation::add(uint32_t time, float state)
 /*not required in incremental version*/
 void CExpectation::update(int modelOrder, unsigned int* times, float* signal, int length)
 {
-	for (int i = 10; i; --i) {
+	double shift;
+	do {
 		expectation();
-		maximisation();
-	}
+		shift = maximisation();
+		std::cout << "shift = " << shift << std::endl;
+	} while (isnan(shift) || shift > 0.001);
 
 	ofstream myfile0("0.txt");
 	ofstream myfile1("1.txt");
@@ -196,9 +202,15 @@ void CExpectation::expectation() {
 	}
 }
 
-void CExpectation::maximisation() {
+double CExpectation::maximisation() {
+	double shift;
 	std::cerr << "Performing maximisation ..." << std::endl;
+
 	for (int i = 0; i < clusters.size(); ++i) {
+		double last_kappa = clusters[i].kappa;
+		double last_mu = clusters[i].mu;
+		double last_weight = clusters[i].weight;
+
 		double s = 0;
 		for (int j = 0; j < timestamps.size(); ++j) {
 			s += timestamps[j].alpha[i];
@@ -214,7 +226,14 @@ void CExpectation::maximisation() {
 		mean_re /= s;
 		mean_im /= s;
 		clusters[i].estimate_from_mean(mean_re, mean_im);
+
+		double delta_kappa = last_kappa - clusters[i].kappa;
+		double delta_mu = last_mu - clusters[i].mu;
+		double delta_weight = last_weight - clusters[i].weight;
+		shift += delta_kappa*delta_kappa + delta_mu*delta_mu + delta_weight*delta_weight;
 	}
+
+	return sqrt(shift);
 }
 
 CExpectation::Timestamp::Timestamp(uint32_t time, int cluster_count) :
@@ -225,7 +244,7 @@ CExpectation::Timestamp::Timestamp(uint32_t time, int cluster_count) :
 	double r;
 
 	for (int i = cluster_count; i; --i) {
-		r = rand() / RAND_MAX;
+		r = float(rand()) / RAND_MAX;
 		s += r;
 		alpha.push_back(r);
 	}
@@ -236,9 +255,9 @@ CExpectation::Timestamp::Timestamp(uint32_t time, int cluster_count) :
 }
 
 CExpectation::Cluster::Cluster() :
-	kappa(3 + rand()/RAND_MAX),
-	mu(rand() / RAND_MAX),
-	weight(rand() / RAND_MAX)
+	kappa(3 + float(rand())/RAND_MAX),
+	mu(float(rand()) / RAND_MAX),
+	weight(float(rand()) / RAND_MAX)
 {
 
 }
@@ -321,8 +340,8 @@ void CExpectation::Cluster::estimate_from_mean(double re, double im) {
 		x = gsl_root_fdfsolver_root (s);
 		status = gsl_root_test_delta (x, x0, 0, 1e-3);
 
-		if (status == GSL_SUCCESS)
-			std::cout << "Converged, iter=" << iter << std::endl;
+		//if (status == GSL_SUCCESS)
+			//std::cout << "Converged, iter=" << iter << std::endl;
 
 		//printf ("%5d %10.7f %10.7f\n", iter, x, x - x0);
 	} while (status == GSL_CONTINUE && iter < max_iter);
