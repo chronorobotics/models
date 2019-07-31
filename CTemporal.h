@@ -26,7 +26,8 @@ typedef enum{
 	TT_PERGAM,
 	TT_ADAPTIVE,
 	TT_MISES,
-	TT_NUMBER
+	TT_EXPECTATION,
+	TT_NUMBER,
 }ETemporalType;
 
 class CTemporal
