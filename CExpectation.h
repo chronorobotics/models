@@ -10,6 +10,8 @@
 #include <vector>
 #include "CTemporal.h"
 
+#include "em/em_von_mises.h"
+
 class CExpectation : public CTemporal
 {
 	public:
@@ -41,44 +43,6 @@ class CExpectation : public CTemporal
 	private:
 		int id;
 
-		static int cluster_count;
-		static double time_to_phase(uint32_t time);
-
-		void expectation();
-		double maximisation();
-
-		class Cluster {
-			public:
-				Cluster();
-				Cluster(double kappa_, double mu_, double weight_);
-				double kappa;
-				double mu;
-				double weight;
-
-				void print();
-				void save(FILE* file, bool lossy = false);
-				void load(FILE* file);
-				void exportToArray(double* array, int maxLen, int& pos);
-				void importFromArray(double* array, int len, int& pos);
-
-				double density_at(double phase) const;
-				void estimate_from_mean(double re, double im);
-
-				static double mean_f (double x, void* params);
-				static double mean_df (double x, void* params);
-				static void mean_fdf (double x, void* params, double* y, double* dy);
-		};
-
-		class Timestamp {
-			public:
-				Timestamp(uint32_t time, int cluster_count);
-				double phase;
-				std::vector<double> alpha;
-		};
-
-		std::vector<Cluster> clusters;
-		std::vector<Timestamp> timestamps;
-
 		class TimeSample {
 			public:
 				TimeSample();
@@ -88,6 +52,9 @@ class CExpectation : public CTemporal
 		};
 		TimeSample sampleArray[1000000];
 		int numSamples;
+
+		EMVonMises positive;
+		EMVonMises negative;
 };
 
 #endif // CEXPECTATION_H

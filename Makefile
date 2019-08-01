@@ -1,4 +1,4 @@
-OBJS=$(patsubst %.cpp,%.o,$(wildcard *.cpp))
+OBJS=$(patsubst %.cpp,%.o,$(wildcard *.cpp) $(wildcard em/*.cpp))
 
 include ../Mk/local.Mk
 CXXINCLUDE+=-I./ -I../common 
