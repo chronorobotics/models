@@ -4,8 +4,8 @@
 #include "CExpectation.h"
 
 CExpectation::CExpectation(int idd) :
-	positive(10),
-	negative(10)
+	positive(20),
+	negative(20)
 {
 	id=idd;
 	firstTime = -1;
@@ -15,6 +15,9 @@ CExpectation::CExpectation(int idd) :
 	numElements = 0;
 	type = TT_EXPECTATION;
 	numSamples = 0;
+
+	positives = 0;
+	negatives = 0;
 
 	srandom(time(0));
 }
@@ -50,8 +53,10 @@ int CExpectation::add(uint32_t time, float state)
 
 	if (state > 0.5) {
 		positive.add_time(time);
+		positives++;
 	} else {
 		negative.add_time(time);
+		negatives++;
 	}
 	return 0;
 }
@@ -66,7 +71,7 @@ void CExpectation::update(int modelOrder, unsigned int* times, float* signal, in
 		std::cout << "shift = " << shift << std::endl;
 	} while (isnan(shift) || shift > 1E-7);*/
 	positive.train();
-	negative.train();
+	//negative.train();
 
 	ofstream myfile0("0.txt");
 	ofstream myfile1("1.txt");
@@ -91,9 +96,10 @@ void CExpectation::print(bool verbose)
 float CExpectation::estimate(uint32_t time)
 {
 	double pd = positive.get_density_at(time);
-	double nd = negative.get_density_at(time);
+	//double nd = negative.get_density_at(time);
 
-	return pd / (pd + nd);
+	//return pd / (pd + nd);
+	return pd;
 }
 
 float CExpectation::predict(uint32_t time)
@@ -122,6 +128,8 @@ int CExpectation::save(FILE* file, bool lossy)
 {
 	positive.save(file, lossy);
 	negative.save(file, lossy);
+	fwrite(&positives, sizeof(int), 1, file);
+	fwrite(&negatives, sizeof(int), 1, file);
 	return 0;
 }
 
@@ -129,6 +137,8 @@ int CExpectation::load(FILE* file)
 {
 	positive.load(file);
 	negative.load(file);
+	fread(&positives, sizeof(int), 1, file);
+	fread(&negatives, sizeof(int), 1, file);
 	return 0;
 }
 
@@ -138,6 +148,8 @@ int CExpectation::exportToArray(double* array,int maxLen)
 	array[pos++] = type;
 	positive.exportToArray(array, maxLen, pos);
 	negative.exportToArray(array, maxLen, pos);
+	array[pos++] = positives;
+	array[pos++] = negatives;
 	return pos;
 }
 
@@ -148,6 +160,8 @@ int CExpectation::importFromArray(double* array,int len)
 	if (type != TT_MEAN) std::cerr << "Error loading the model, type mismatch." << std::endl;
 	positive.importFromArray(array, len, pos);
 	negative.importFromArray(array, len, pos);
+	positives = array[pos++];
+	negatives = array[pos++];
 	update(0);
 	return pos;
 }
