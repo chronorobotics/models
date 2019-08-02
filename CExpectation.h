@@ -10,7 +10,7 @@
 #include <vector>
 #include "CTemporal.h"
 
-#include "em/em_von_mises.h"
+#include "em/em_sqdist.h"
 
 class CExpectation : public CTemporal
 {
@@ -53,8 +53,8 @@ class CExpectation : public CTemporal
 		TimeSample sampleArray[1000000];
 		int numSamples;
 
-		EMVonMises positive;
-		EMVonMises negative;
+		EMSqdist positive;
+		EMSqdist negative;
 
 		int positives;
 		int negatives;
