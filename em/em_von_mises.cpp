@@ -41,7 +41,7 @@ void EMVonMises::expectation() {
 	}
 }
 
-double EMVonMises::maximisation() {
+double EMVonMises::maximisation(bool keep_kappa) {
 	double shift;
 	std::cerr << "Performing maximisation ..." << std::endl;
 
@@ -64,7 +64,7 @@ double EMVonMises::maximisation() {
 		}
 		mean_re /= s;
 		mean_im /= s;
-		clusters[i].estimate_from_mean(mean_re, mean_im);
+		clusters[i].estimate_from_mean(mean_re, mean_im, keep_kappa);
 
 		double delta_kappa = last_kappa - clusters[i].kappa;
 		double delta_mu = last_mu - clusters[i].mu;
@@ -76,7 +76,7 @@ double EMVonMises::maximisation() {
 }
 
 double EMVonMises::time_to_phase(uint32_t time) {
-	float phase = fmodf(time, 86400.0f) / 86400;
+	float phase = fmodf(time, 604800.0f) / 604800;
 	if (phase > 0.5) {
 		phase -= 1;
 	}
@@ -84,10 +84,10 @@ double EMVonMises::time_to_phase(uint32_t time) {
 }
 
 void EMVonMises::train() {
-	double shift;
+	double shift = 555;
 	do {
 		expectation();
-		shift = maximisation();
+		shift = maximisation(shift > 0.001);
 		std::cout << "shift = " << shift << std::endl;
 	} while (isnan(shift) || shift > 1E-7);
 }
@@ -162,7 +162,7 @@ double EMVonMises::Cluster::density_at(double phase) const {
 	return exp(kappa*cos(phase - mu)) / (2*M_PI*gsl_sf_bessel_I0(kappa));
 }
 
-void EMVonMises::Cluster::estimate_from_mean(double re, double im) {
+void EMVonMises::Cluster::estimate_from_mean(double re, double im, bool keep_kappa) {
 	if (re == 0 && im == 0) {
 		mu = 0;
 		kappa = 0;
@@ -170,7 +170,10 @@ void EMVonMises::Cluster::estimate_from_mean(double re, double im) {
 	}
 
 	mu = atan2(im, re);
-	//return;
+	if (keep_kappa) {
+		return;
+	}
+
 	double aa = sqrt(re*re + im*im);
 
 	int status;
@@ -190,9 +193,6 @@ void EMVonMises::Cluster::estimate_from_mean(double re, double im) {
 
 	gsl_root_fdfsolver_set (s, &FDF, x);
 
-	//printf ("using %s method\n", gsl_root_fdfsolver_name (s));
-	//printf ("%-5s %10s %10s %10s\n", "iter", "root", "err", "err(est)");
-
 	do {
 		iter++;
 		status = gsl_root_fdfsolver_iterate (s);
@@ -200,10 +200,6 @@ void EMVonMises::Cluster::estimate_from_mean(double re, double im) {
 		x = gsl_root_fdfsolver_root (s);
 		status = gsl_root_test_delta (x, x0, 0, 1e-3);
 
-		//if (status == GSL_SUCCESS)
-			//std::cout << "Converged, iter=" << iter << std::endl;
-
-		//printf ("%5d %10.7f %10.7f\n", iter, x, x - x0);
 	} while (status == GSL_CONTINUE && iter < max_iter);
 
 	gsl_root_fdfsolver_free (s);

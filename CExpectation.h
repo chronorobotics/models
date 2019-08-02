@@ -55,6 +55,9 @@ class CExpectation : public CTemporal
 
 		EMVonMises positive;
 		EMVonMises negative;
+
+		int positives;
+		int negatives;
 };
 
 #endif // CEXPECTATION_H

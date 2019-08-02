@@ -23,7 +23,7 @@ class EMVonMises
 
 	private:
 		void expectation();
-		double maximisation();
+		double maximisation(bool keep_kappa);
 
 		int cluster_count;
 		static double time_to_phase(uint32_t time);
@@ -43,7 +43,7 @@ class EMVonMises
 				void importFromArray(double* array, int len, int& pos);
 
 				double density_at(double phase) const;
-				void estimate_from_mean(double re, double im);
+				void estimate_from_mean(double re, double im, bool keep_kappa);
 
 				static double mean_f (double x, void* params);
 				static double mean_df (double x, void* params);
