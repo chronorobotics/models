@@ -106,7 +106,7 @@ double DPSqdist::density_at(uint32_t time) {
 	for (int i = 0; i < count; ++i) {
 		double x = cos(phase) - xx[i];
 		double y = sin(phase) - yy[i];
-		result += weight[i] / (x*x + y*y);
+		result += weight[i] * (1 - (xx[i]*xx[i] + yy[i]*yy[i])) / (2*M_PI * (x*x + y*y));
 	}
 	return result;
 }
@@ -119,14 +119,37 @@ void DPSqdist::print() {
 	std::cout << std::endl;
 }
 
+void DPSqdist::power(double& re, double& im, int n) {
+	double r = 1;
+	double i = 0;
+	double r2, i2;
+
+	while (n) {
+		if (n % 2) {
+			r2 = r*re - i*im;
+			i2 = r*im + i*re;
+			r = r2;
+			i = i2;
+		}
+
+		r2 = re*re - im*im;
+		i2 = 2*re*im;
+		re = r2;
+		im = i2;
+
+		n >>= 1;
+	}
+
+	re = r;
+	im = i;
+}
+
 int DPSqdist::moment_f(const gsl_vector* x, void* params, gsl_vector* f) {
 	EquationParams* ep = (EquationParams*) params;
 
 	for (int i = ep->moment_count - 1; i >= 0; --i) {
 		double y_re = 0;
 		double y_im = 0;
-		double foo_re, foo_im, err;
-		size_t nevals;
 
 		for (int j = ep->cluster_count - 1; j >= 0; --j) {
 			double x_xx     = gsl_vector_get(x, 3*j);
@@ -137,20 +160,10 @@ int DPSqdist::moment_f(const gsl_vector* x, void* params, gsl_vector* f) {
 				return GSL_EDOM;
 			}
 
-			IntegrationParams ip(x_xx, x_yy, i+1);
+			power(x_xx, x_yy, i+1);
 
-			gsl_function F1;
-			F1.function = &DPSqdist::cos_integral_f;
-			F1.params = &ip;
-			gsl_function F2;
-			F2.function = &DPSqdist::sin_integral_f;
-			F2.params = &ip;
-
-			gsl_integration_cquad(&F1, -M_PI, M_PI, 0.001, 0.001, ep->workplace, &foo_re, &err, &nevals);
-			gsl_integration_cquad(&F2, -M_PI, M_PI, 0.001, 0.001, ep->workplace, &foo_im, &err, &nevals);
-
-			y_re += x_weight * foo_re; //TODO
-			y_im += x_weight * foo_im; //TODO
+			y_re += x_weight * x_xx;
+			y_im += x_weight * x_yy;
 		}
 
 		gsl_vector_set (f, 2*i    , y_re - ep->right_side[2*i]);
@@ -213,34 +226,7 @@ void DPSqdist::importFromArray(double* array, int len, int& pos)
 DPSqdist::EquationParams::EquationParams(std::vector<double> right_side_, int cluster_count_, int moment_count_) :
 	right_side(right_side_),
 	cluster_count(cluster_count_),
-	moment_count(moment_count_),
-	workplace()
-{
-	workplace = gsl_integration_cquad_workspace_alloc(1000);
-}
-
-DPSqdist::IntegrationParams::IntegrationParams(int u_, int v_, int n_) :
-	u(u_),
-	v(v_),
-	n(n_)
+	moment_count(moment_count_)
 {
 
-}
-
-DPSqdist::EquationParams::~EquationParams() {
-	gsl_integration_cquad_workspace_free(workplace);
-}
-
-double DPSqdist::sin_integral_f (double x, void* params) {
-	IntegrationParams* ip = (IntegrationParams*) params;
-	double x_ = (-sin(x) - ip->u);
-	double y_ = (cos(x) - ip->v);
-	return sin(ip->n * x) / (x_*x_ + y_*y_);
-}
-
-double DPSqdist::cos_integral_f (double x, void* params) {
-	IntegrationParams* ip = (IntegrationParams*) params;
-	double x_ = (cos(x) - ip->u);
-	double y_ = (sin(x) - ip->v);
-	return cos(ip->n * x) / (x_*x_ + y_*y_);
 }
