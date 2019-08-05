@@ -4,8 +4,8 @@
 #include "CExpectation.h"
 
 CExpectation::CExpectation(int idd) :
-	positive(6),
-	negative(6)
+	positive(50),
+	negative(50)
 {
 	id=idd;
 	firstTime = -1;
@@ -64,12 +64,6 @@ int CExpectation::add(uint32_t time, float state)
 /*not required in incremental version*/
 void CExpectation::update(int modelOrder, unsigned int* times, float* signal, int length)
 {
-	/*double shift;
-	do {
-		expectation();
-		shift = maximisation();
-		std::cout << "shift = " << shift << std::endl;
-	} while (isnan(shift) || shift > 1E-7);*/
 	positive.train();
 	negative.train();
 
@@ -95,8 +89,8 @@ void CExpectation::print(bool verbose)
 
 float CExpectation::estimate(uint32_t time)
 {
-	double pd = positive.get_density_at(time) * positives;
-	double nd = negative.get_density_at(time) * negatives;
+	double pd = positive.get_density_at(time) * positives * positives;
+	double nd = negative.get_density_at(time) * negatives * negatives;
 
 	return pd / (pd + nd);
 	return pd;
