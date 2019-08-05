@@ -4,8 +4,8 @@
 #include "CExpectation.h"
 
 CExpectation::CExpectation(int idd) :
-	positive(50),
-	negative(50)
+	positive(120),
+	negative(30)
 {
 	id=idd;
 	firstTime = -1;
@@ -69,12 +69,16 @@ void CExpectation::update(int modelOrder, unsigned int* times, float* signal, in
 
 	ofstream myfile0("0.txt");
 	ofstream myfile1("1.txt");
+	//ofstream myfile2("2.txt");
 	for (int i = 0; i < numSamples; ++i) {
 		myfile0 << sampleArray[i].v << std::endl;
-		myfile1 << predict(sampleArray[i].t) << std::endl;
+		myfile1 << estimate(sampleArray[i].t) << std::endl;
+		//myfile1 << positive.get_density_at(sampleArray[i].t)/negatives << std::endl;
+		//myfile2 << negative.get_density_at(sampleArray[i].t)/positives*100 << std::endl;
 	}
 	myfile0.close();
 	myfile1.close();
+	//myfile2.close();
 }
 
 /*text representation of the fremen model*/
@@ -89,8 +93,8 @@ void CExpectation::print(bool verbose)
 
 float CExpectation::estimate(uint32_t time)
 {
-	double pd = positive.get_density_at(time) * positives * positives;
-	double nd = negative.get_density_at(time) * negatives * negatives;
+	double pd = positive.get_density_at(time) * positives;
+	double nd = negative.get_density_at(time) * negatives * 3000;
 
 	return pd / (pd + nd);
 	return pd;
