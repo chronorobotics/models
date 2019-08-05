@@ -64,7 +64,7 @@ void DPSqdist::calculate()
 			iter++;
 			status = gsl_multiroot_fsolver_iterate(s);
 
-			std::cout << "iter " << iter << std::endl;
+			/*std::cout << "iter " << iter << std::endl;
 			std::cout << "    residuum:";
 			for (int i = 0; i < n; ++i) {
 				std::cout << " " << gsl_vector_get(s->f, i);
@@ -73,7 +73,7 @@ void DPSqdist::calculate()
 			for (int i = 0; i < n; ++i) {
 				std::cout << " " << gsl_vector_get(s->x, i);
 			}
-			std::cout << std::endl;
+			std::cout << std::endl;*/
 
 			if (status) {
 				break;
@@ -83,10 +83,16 @@ void DPSqdist::calculate()
 		}	while (status == GSL_CONTINUE && iter < 1000);
 
 		std::cout << "status = " << gsl_strerror (status) << ", tries = " << tries << std::endl;
+		double sum_w = 0;
 		for (int i = 0; i < count; ++i) {
 			xx[i]     = gsl_vector_get(s->x, 3*i);
 			yy[i]     = gsl_vector_get(s->x, 3*i + 1);
 			weight[i] = gsl_vector_get(s->x, 3*i + 2);
+			sum_w += weight[i];
+		}
+
+		for (int i = 0; i < count; ++i) {
+			weight[i] /= sum_w;
 		}
 
 		gsl_multiroot_fsolver_free(s);
@@ -150,11 +156,13 @@ int DPSqdist::moment_f(const gsl_vector* x, void* params, gsl_vector* f) {
 	for (int i = ep->moment_count - 1; i >= 0; --i) {
 		double y_re = 0;
 		double y_im = 0;
+		double sum_w = 0;
 
 		for (int j = ep->cluster_count - 1; j >= 0; --j) {
 			double x_xx     = gsl_vector_get(x, 3*j);
 			double x_yy     = gsl_vector_get(x, 3*j + 1);
 			double x_weight = gsl_vector_get(x, 3*j + 2);
+			sum_w += x_weight;
 
 			if (isnan(x_xx) || isnan(x_yy) || isnan(x_weight)) {
 				return GSL_EDOM;
@@ -166,9 +174,9 @@ int DPSqdist::moment_f(const gsl_vector* x, void* params, gsl_vector* f) {
 			y_im += x_weight * x_yy;
 		}
 
-		gsl_vector_set (f, 2*i    , y_re - ep->right_side[2*i]);
+		gsl_vector_set (f, 2*i    , y_re - ep->right_side[2*i]/sum_w);
 		if (2*i + 1 < ep->cluster_count*3) {
-			gsl_vector_set (f, 2*i + 1, y_im - ep->right_side[2*i + 1]);
+			gsl_vector_set (f, 2*i + 1, y_im - ep->right_side[2*i + 1]/sum_w);
 		}
 
 	}
