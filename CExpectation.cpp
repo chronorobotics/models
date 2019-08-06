@@ -4,8 +4,8 @@
 #include "CExpectation.h"
 
 CExpectation::CExpectation(int idd) :
-	positive(2),
-	negative(2)
+	positive(30),
+	negative(30)
 {
 	id=idd;
 	firstTime = -1;
@@ -93,8 +93,8 @@ void CExpectation::print(bool verbose)
 
 float CExpectation::estimate(uint32_t time)
 {
-	double pd = positive.get_density_at(time);
-	double nd = negative.get_density_at(time);
+	double pd = positive.get_density_at(time) * positives;
+	double nd = negative.get_density_at(time) * negatives;
 
 	return pd / (pd + nd);
 	return pd;
