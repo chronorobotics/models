@@ -64,9 +64,9 @@ double EMSqdist::maximisation() {
 		clusters[i].xx = mean_re / s;
 		clusters[i].yy = mean_im / s;
 		double norm = sqrt(clusters[i].xx*clusters[i].xx + clusters[i].yy*clusters[i].yy);
-		if (norm > 0.999) {
-			clusters[i].xx *= 0.999/norm;
-			clusters[i].yy *= 0.999/norm;
+		if (norm > 0.99) {
+			clusters[i].xx *= 0.99/norm;
+			clusters[i].yy *= 0.99/norm;
 		}
 
 		double delta_xx = last_xx - clusters[i].xx;
@@ -79,7 +79,7 @@ double EMSqdist::maximisation() {
 }
 
 double EMSqdist::time_to_phase(uint32_t time) {
-	float phase = fmodf(time, 604800.0f) / 604800;
+	float phase = fmodf(time, 86400.0f) / 86400;
 	if (phase > 0.5) {
 		phase -= 1;
 	}
@@ -167,7 +167,7 @@ void EMSqdist::Cluster::exportToArray(double* array, int maxLen, int& pos) {
 double EMSqdist::Cluster::density_at(double phase) const {
 	double dx = xx - cos(phase);
 	double dy = yy - sin(phase);
-	return 2*M_PI / ((dx*dx + dy*dy) * (1 - xx*xx - yy*yy));
+	return (1 - xx*xx - yy*yy) / ((dx*dx + dy*dy) * 2*M_PI);
 }
 
 void EMSqdist::save(FILE* file, bool lossy)
@@ -208,13 +208,15 @@ void EMSqdist::importFromArray(double* array, int len, int& pos)
 
 void EMSqdist::print() {
 	std::cout << "[";
+	double sum_w = 0;
 	for (int i = 0; i < clusters.size(); ++i) {
 		if (i) {
 			std::cout << ", ";
 		}
 		clusters[i].print();
+		sum_w += clusters[i].weight;
 	}
-	std::cout << "]" << std::endl;
+	std::cout << "] (w = " << sum_w << ")" << std::endl;
 }
 
 double EMSqdist::get_density_at(uint32_t time) {
