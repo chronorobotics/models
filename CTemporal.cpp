@@ -20,7 +20,7 @@ const char *temporalModelName[] =
 	"Gaussian",
 	"Adaptive",
 	"VonMises",
-	"HyT-EM2",
+	"HyT-CEM",
 	"Number",
 };
 
