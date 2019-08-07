@@ -22,18 +22,28 @@ class EMSqdist
 		double get_density_at(uint32_t time);
 
 	private:
+		class Phase {
+			public:
+				Phase();
+				Phase(double day_, double week_);
+				double day;
+				double week;
+		};
+
 		void expectation();
 		double maximisation();
 
 		int cluster_count;
-		static double time_to_phase(uint32_t time);
+		static Phase time_to_phase(uint32_t time);
 
 		class Cluster {
 			public:
 				Cluster();
-				Cluster(double xx_, double yy_, double weight_);
+				Cluster(double xx_, double yy_, double xxx_, double yyy_, double weight_);
 				double xx;
 				double yy;
+				double xxx;
+				double yyy;
 				double weight;
 
 				void print();
@@ -42,13 +52,13 @@ class EMSqdist
 				void exportToArray(double* array, int maxLen, int& pos);
 				void importFromArray(double* array, int len, int& pos);
 
-				double density_at(double phase) const;
+				double density_at(Phase phase) const;
 		};
 
 		class Timestamp {
 			public:
 				Timestamp(uint32_t time, int cluster_count);
-				double phase;
+				Phase phase;
 				std::vector<double> alpha;
 		};
 
