@@ -42,7 +42,7 @@ void EMVonMises::expectation() {
 }
 
 double EMVonMises::maximisation(bool keep_kappa) {
-	double shift;
+	double shift = 0;
 	std::cerr << "Performing maximisation ..." << std::endl;
 
 	for (int i = 0; i < clusters.size(); ++i) {
