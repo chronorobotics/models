@@ -4,8 +4,8 @@
 #include "CExpectation.h"
 
 CExpectation::CExpectation(int idd) :
-	positive(50),
-	negative(50)
+	positive(idd),
+	negative(idd)
 {
 	id=idd;
 	firstTime = -1;
