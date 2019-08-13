@@ -73,8 +73,11 @@ double EMSqdist::maximisation() {
 		double delta_weight = last_weight - clusters[i].weight;
 		shift += delta_xx*delta_xx + delta_yy*delta_yy + delta_weight*delta_weight;
 	}
-
 	return sqrt(shift);
+}
+
+void EMSqdist::add_time(uint32_t time) {
+	timestamps.push_back(Timestamp(time, cluster_count));
 }
 
 void EMSqdist::train() {
@@ -86,10 +89,32 @@ void EMSqdist::train() {
 	} while (shift > 1E-3);
 }
 
+<<<<<<< HEAD
+=======
 void EMSqdist::add_time(uint32_t time, double value) {
 	timestamps.push_back(Timestamp(time, value, cluster_count));
 }
 
+EMSqdist::Timestamp::Timestamp(uint32_t time, double weight_, int cluster_count) :
+	phase(time_to_phase(time)),
+	weight(weight_),
+	alpha()
+{
+	double s = 0;
+	double r;
+
+	for (int i = cluster_count; i; --i) {
+		r = float(rand()) / RAND_MAX;
+		s += r;
+		alpha.push_back(r);
+	}
+
+	for (int i = cluster_count - 1; i >= 0; --i) {
+		alpha[i] /= s;
+	}
+}
+
+>>>>>>> Modify EM to predict values
 EMSqdist::Cluster::Cluster() :
 	xx(),
 	yy(),

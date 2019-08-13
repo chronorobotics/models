@@ -44,6 +44,17 @@ class EMSqdist : public EMCircular
 				double density_at(double phase) const;
 		};
 
+<<<<<<< HEAD
+=======
+		class Timestamp {
+			public:
+				Timestamp(uint32_t time, double weight_, int cluster_count);
+				double phase;
+				double weight;
+				std::vector<double> alpha;
+		};
+
+>>>>>>> Modify EM to predict values
 		std::vector<Cluster> clusters;
 };
 

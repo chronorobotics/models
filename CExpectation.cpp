@@ -51,13 +51,13 @@ int CExpectation::add(uint32_t time, float state)
 	sampleArray[numSamples] = TimeSample(time, state);
 	numSamples++;
 
-	if (state > 0.25) {
-		positive.add_time(time);
+	//if (state > 0.25) {
+		positive.add_time(time, state);
 		positives++;
-	} else {
+	/*} else {
 		negative.add_time(time);
 		negatives++;
-	}
+	}*/
 	return 0;
 }
 
@@ -65,7 +65,7 @@ int CExpectation::add(uint32_t time, float state)
 void CExpectation::update(int modelOrder, unsigned int* times, float* signal, int length)
 {
 	positive.train();
-	negative.train();
+	//negative.train();
 
 	ofstream myfile0("0.txt");
 	ofstream myfile1("1.txt");
@@ -93,11 +93,12 @@ void CExpectation::print(bool verbose)
 
 float CExpectation::estimate(uint32_t time)
 {
-	double pd = positive.get_density_at(time) * positives;
+	/*double pd = positive.get_density_at(time) * positives;
 	double nd = negative.get_density_at(time) * negatives;
 
 	return 0.5 * pd / (pd + nd);
-	return pd;
+	return pd;*/
+	return positive.get_density_at(time) * 2.5;
 }
 
 float CExpectation::predict(uint32_t time)
