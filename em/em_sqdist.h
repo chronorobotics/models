@@ -9,6 +9,7 @@
 class EMSqdist : public EMCircular
 {
 	public:
+		EMSqdist();
 		EMSqdist(int cluster_count_);
 
 		void train();
@@ -45,6 +46,7 @@ class EMSqdist : public EMCircular
 		};
 
 		std::vector<Cluster> clusters;
+		double timestamps_weight;
 };
 
 #endif // EM_SQDIST_H

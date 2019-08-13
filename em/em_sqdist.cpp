@@ -3,9 +3,19 @@
 #include <sstream>
 #include "em_sqdist.h"
 
+EMSqdist::EMSqdist() :
+	cluster_count(),
+	clusters(),
+	timestamps(),
+	timestamps_weight()
+{
+
+}
+
 EMSqdist::EMSqdist(int cluster_count_) :
 	EMCircular(cluster_count_),
-	clusters()
+	clusters(),
+	timestamps_weight()
 {
 	double s = 0;
 	for (int i = 0; i < cluster_count; ++i) {
@@ -52,13 +62,14 @@ double EMSqdist::maximisation() {
 		for (int j = 0; j < timestamps.size(); ++j) {
 			s += timestamps[j].alpha[i] * timestamps[j].weight;
 		}
-		clusters[i].weight = s / timestamps.size();
+		clusters[i].weight = s / timestamps_weight;
 
 		double mean_re = 0;
 		double mean_im = 0;
 		for (int j = 0; j < timestamps.size(); ++j) {
 			mean_re += cos(timestamps[j].phase) * timestamps[j].alpha[i] * timestamps[j].weight;
 			mean_im += sin(timestamps[j].phase) * timestamps[j].alpha[i] * timestamps[j].weight;
+			//std::cout << timestamps[j] << std::endl;
 		}
 		clusters[i].xx = mean_re / s;
 		clusters[i].yy = mean_im / s;
@@ -73,7 +84,6 @@ double EMSqdist::maximisation() {
 		double delta_weight = last_weight - clusters[i].weight;
 		shift += delta_xx*delta_xx + delta_yy*delta_yy + delta_weight*delta_weight;
 	}
-
 	return sqrt(shift);
 }
 
@@ -88,6 +98,7 @@ void EMSqdist::train() {
 
 void EMSqdist::add_time(uint32_t time, double value) {
 	timestamps.push_back(Timestamp(time, value, cluster_count));
+	timestamps_weight += value;
 }
 
 EMSqdist::Cluster::Cluster() :
