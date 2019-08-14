@@ -5,7 +5,7 @@
 
 CExpectation::CExpectation(int idd) :
 	positive(idd),
-	negative(idd)
+	negative(10)
 {
 	id=idd;
 	firstTime = -1;

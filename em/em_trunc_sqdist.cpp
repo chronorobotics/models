@@ -27,7 +27,7 @@ EMTruncSqdist::EMTruncSqdist(int cluster_count_) :
 }
 
 void EMTruncSqdist::expectation() {
-	std::cerr << "Performing expectation ..." << std::endl;
+	//std::cerr << "Performing expectation ..." << std::endl;
 
 	for (int i = 0; i < timestamps.size(); ++i) {
 		double s = 0;
@@ -45,7 +45,7 @@ void EMTruncSqdist::expectation() {
 
 double EMTruncSqdist::maximisation() {
 	double shift = 0;
-	std::cerr << "Performing maximisation ..." << std::endl;
+	//std::cerr << "Performing maximisation ..." << std::endl;
 
 	for (int i = 0; i < clusters.size(); ++i) {
 		double last_xx = clusters[i].xx;
@@ -73,6 +73,10 @@ double EMTruncSqdist::maximisation() {
 		m1i /= timestamps.size();
 		m2r /= timestamps.size();
 		m2i /= timestamps.size();
+/*		m1r /= s;
+		m1i /= s;
+		m2r /= s;
+		m2i /= s;*/ //This doesn't work for a strange reason.
 		clusters[i].estimate(m1r, m1i, m2r, m2i);
 
 
@@ -96,11 +100,13 @@ double EMTruncSqdist::time_to_phase(uint32_t time) {
 
 void EMTruncSqdist::train() {
 	double shift = 555;
+	int i = 0;
 	do {
 		expectation();
 		shift = maximisation();
 		std::cout << "shift = " << shift << std::endl;
-	} while (isnan(shift) || shift > 1E-2);
+		++i;
+	} while ((isnan(shift) || shift > 1E-2) && i < 1000);
 }
 
 void EMTruncSqdist::add_time(uint32_t time) {
@@ -249,23 +255,25 @@ void EMTruncSqdist::Cluster::estimate(double m1r, double m1i, double m2r, double
 				break;
 			}
 
-			status = gsl_multiroot_test_residual (s->f, 1E-7);
+			status = gsl_multiroot_test_residual (s->f, 1E-4);
 		}	while (status == GSL_CONTINUE && iter < 1000);
 
 		//std::cout << "status = " << gsl_strerror (status) << std::endl;
 		tries++;
 	} while (status != GSL_SUCCESS && tries < 1000);
+	if (tries >= 1000) {
+		std::cout << "ERROR 31101" << std::endl;
+	}
 
 	double xr = tanh(gsl_vector_get(s->x, 0));
 	xr *= xr;
 	//double xr = gsl_vector_get(s->x, 0);
+	if (xr > 0.99) xr = 0.99;
 	xx = xr*cos(mu);
 	yy = xr*sin(mu);
 	theta = tanh(gsl_vector_get(s->x, 1));
 	theta *= M_PI*theta;
 	//theta = gsl_vector_get(s->x, 1);
-
-	if (theta < 0.05) theta = 0.05;
 
 	gsl_multiroot_fsolver_free(s);
 	gsl_vector_free(x);
@@ -302,7 +310,7 @@ EMTruncSqdist::Cluster::RightSide::RightSide(double m1r, double m1i, double m2r,
 	m1(sqrt(m1r*m1r + m1i*m1i)),
 	m2(sqrt(m2r*m2r + m2i*m2i))
 {
-
+	//std::cout << m1 << " " << m2 << std::endl;
 }
 
 void EMTruncSqdist::save(FILE* file, bool lossy)
