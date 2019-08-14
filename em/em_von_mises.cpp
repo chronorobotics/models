@@ -6,8 +6,8 @@
 #include <gsl/gsl_sf_bessel.h>
 #include "em_von_mises.h"
 
-EMVonMises::EMVonMises(int cluster_count_) :
-	EMCircular(cluster_count_),
+EMVonMises::EMVonMises(int cluster_count_, double period_) :
+	EMCircular(cluster_count_, period_),
 	clusters()
 {
 	double s = 0;
@@ -84,7 +84,7 @@ void EMVonMises::train() {
 }
 
 void EMVonMises::add_time(uint32_t time) {
-	timestamps.push_back(Timestamp(time, cluster_count));
+	timestamps.push_back(Timestamp(time, cluster_count, period));
 }
 
 EMVonMises::Cluster::Cluster() :
@@ -201,6 +201,7 @@ void EMVonMises::Cluster::mean_fdf (double x, void* params, double* y, double* d
 
 void EMVonMises::save(FILE* file, bool lossy)
 {
+	fwrite(&period, sizeof(double), 1, file);
 	int size = clusters.size();
 	fwrite(&size, sizeof(int), 1, file);
 	for (int i = 0; i < size; ++i) {
@@ -210,6 +211,7 @@ void EMVonMises::save(FILE* file, bool lossy)
 
 void EMVonMises::load(FILE* file)
 {
+	fread(&period, sizeof(double), 1, file);
 	int size;
 	fread(&size, sizeof(int), 1, file);
 	clusters.resize(size);
@@ -220,6 +222,7 @@ void EMVonMises::load(FILE* file)
 
 void EMVonMises::exportToArray(double* array, int maxLen, int& pos)
 {
+	array[pos++] = period;
 	array[pos++] = clusters.size();
 	for (int i = 0; i < clusters.size(); ++i) {
 		clusters[i].exportToArray(array, maxLen, pos);
@@ -228,6 +231,7 @@ void EMVonMises::exportToArray(double* array, int maxLen, int& pos)
 
 void EMVonMises::importFromArray(double* array, int len, int& pos)
 {
+	period = array[pos++];
 	int size = array[pos++];
 	clusters.resize(size);
 	for (int i = 0; i < size; ++i) {
@@ -247,7 +251,7 @@ void EMVonMises::print() {
 }
 
 double EMVonMises::get_density_at(uint32_t time) {
-	double phase = time_to_phase(time);
+	double phase = time_to_phase(time, period);
 	double result = 0;
 	for (int i = 0; i < clusters.size(); ++i) {
 		result += clusters[i].weight * clusters[i].density_at(phase);

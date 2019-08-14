@@ -8,6 +8,7 @@
 #include <string.h>
 #include <stdint.h>
 #include <vector>
+#include <memory>
 #include "CTemporal.h"
 
 #include "em/em_sqdist.h"
@@ -53,8 +54,10 @@ class CExpectation : public CTemporal
 		TimeSample sampleArray[1000000];
 		int numSamples;
 
-		EMSqdist positive;
-		EMSqdist negative;
+		std::shared_ptr<EMSqdist> positive;
+		std::shared_ptr<EMSqdist> negative;
+
+		double calc_square_error();
 
 		int positives;
 		int negatives;

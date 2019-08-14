@@ -4,8 +4,8 @@
 #include "CExpectation.h"
 
 CExpectation::CExpectation(int idd) :
-	positive(idd),
-	negative(idd)
+	positive(),
+	negative()
 {
 	id=idd;
 	firstTime = -1;
@@ -45,6 +45,15 @@ CExpectation::TimeSample::TimeSample(long t_, float v_) :
 {
 }
 
+double CExpectation::calc_square_error() {
+	double result = 0;
+	for (int i = 0; i < numSamples; ++i) {
+		double foo = sampleArray[i].v - estimate(sampleArray[i].t);
+		result += foo*foo;
+	}
+	return result;
+}
+
 // adds new state observations at given times
 int CExpectation::add(uint32_t time, float state)
 {
@@ -52,10 +61,8 @@ int CExpectation::add(uint32_t time, float state)
 	numSamples++;
 
 	if (state > 0.5) {
-		positive.add_time(time);
 		positives++;
 	} else {
-		negative.add_time(time);
 		negatives++;
 	}
 	return 0;
@@ -64,8 +71,35 @@ int CExpectation::add(uint32_t time, float state)
 /*not required in incremental version*/
 void CExpectation::update(int modelOrder, unsigned int* times, float* signal, int length)
 {
-	positive.train();
-	negative.train();
+	double best = -1;
+	int best_period = 0;
+	std::shared_ptr<EMSqdist> best_positive;
+	std::shared_ptr<EMSqdist> best_negative;
+	for (int days = 1; days <= 14; ++days) {
+		positive = std::shared_ptr<EMSqdist>(new EMSqdist(id, 86400*days));
+		negative = std::shared_ptr<EMSqdist>(new EMSqdist(id, 86400*days));
+
+		for (int i = 0; i < numSamples; ++i) {
+			if (sampleArray[i].v > 0.5) {
+				positive->add_time(sampleArray[i].t);
+			} else {
+				negative->add_time(sampleArray[i].t);
+			}
+		}
+
+		positive->train();
+		negative->train();
+		double err = calc_square_error();
+		if (best < 0 || err < best) {
+			best = err;
+			best_positive = positive;
+			best_negative = negative;
+			best_period = days;
+		}
+	}
+	positive = best_positive;
+	negative = best_negative;
+	std::cout << "Best period is " << best_period << " days." << std::endl;
 
 	ofstream myfile0("0.txt");
 	ofstream myfile1("1.txt");
@@ -85,16 +119,16 @@ void CExpectation::update(int modelOrder, unsigned int* times, float* signal, in
 void CExpectation::print(bool verbose)
 {
 	std::cout << "Positive:";
-	positive.print();
+	positive->print();
 	std::cout << std::endl << "Negative:";
-	negative.print();
+	negative->print();
 	std::cout << std::endl;
 }
 
 float CExpectation::estimate(uint32_t time)
 {
-	double pd = positive.get_density_at(time) * positives;
-	double nd = negative.get_density_at(time) * negatives;
+	double pd = positive->get_density_at(time) * positives;
+	double nd = negative->get_density_at(time) * negatives;
 
 	return pd / (pd + nd);
 	return pd;
@@ -124,8 +158,8 @@ int CExpectation::load(const char* name)
 
 int CExpectation::save(FILE* file, bool lossy)
 {
-	positive.save(file, lossy);
-	negative.save(file, lossy);
+	positive->save(file, lossy);
+	negative->save(file, lossy);
 	fwrite(&positives, sizeof(int), 1, file);
 	fwrite(&negatives, sizeof(int), 1, file);
 	return 0;
@@ -133,8 +167,10 @@ int CExpectation::save(FILE* file, bool lossy)
 
 int CExpectation::load(FILE* file)
 {
-	positive.load(file);
-	negative.load(file);
+	positive = std::shared_ptr<EMSqdist>(new EMSqdist(0, 0));
+	negative = std::shared_ptr<EMSqdist>(new EMSqdist(0, 0));
+	positive->load(file);
+	negative->load(file);
 	fread(&positives, sizeof(int), 1, file);
 	fread(&negatives, sizeof(int), 1, file);
 	return 0;
@@ -144,8 +180,8 @@ int CExpectation::exportToArray(double* array,int maxLen)
 {
 	int pos = 0;
 	array[pos++] = type;
-	positive.exportToArray(array, maxLen, pos);
-	negative.exportToArray(array, maxLen, pos);
+	positive->exportToArray(array, maxLen, pos);
+	negative->exportToArray(array, maxLen, pos);
 	array[pos++] = positives;
 	array[pos++] = negatives;
 	return pos;
@@ -156,8 +192,10 @@ int CExpectation::importFromArray(double* array,int len)
 	int pos = 0;
 	type = (ETemporalType)array[pos++];
 	if (type != TT_MEAN) std::cerr << "Error loading the model, type mismatch." << std::endl;
-	positive.importFromArray(array, len, pos);
-	negative.importFromArray(array, len, pos);
+	positive = std::shared_ptr<EMSqdist>(new EMSqdist(0, 0));
+	negative = std::shared_ptr<EMSqdist>(new EMSqdist(0, 0));
+	positive->importFromArray(array, len, pos);
+	negative->importFromArray(array, len, pos);
 	positives = array[pos++];
 	negatives = array[pos++];
 	update(0);

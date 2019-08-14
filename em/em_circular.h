@@ -8,7 +8,7 @@
 class EMCircular
 {
 	public:
-		EMCircular(int cluster_count_);
+		EMCircular(int cluster_count_, double period_);
 
 		virtual void train() = 0;
 		virtual void add_time(uint32_t time) = 0;
@@ -24,11 +24,12 @@ class EMCircular
 
 	protected:
 		int cluster_count;
-		static double time_to_phase(uint32_t time);
+		double period;
+		static double time_to_phase(uint32_t time, double period_);
 
 		class Timestamp {
 			public:
-				Timestamp(uint32_t time, int cluster_count);
+				Timestamp(uint32_t time, int cluster_count, double period_);
 				double phase;
 				std::vector<double> alpha;
 		};

@@ -3,9 +3,17 @@
 #include <sstream>
 #include "em_sqdist.h"
 
-EMSqdist::EMSqdist(int cluster_count_, double period_) :
-	EMCircular(cluster_count_, period_),
+<<<<<<< HEAD
+EMSqdist::EMSqdist(int cluster_count_) :
+	EMCircular(cluster_count_),
 	clusters()
+=======
+EMSqdist::EMSqdist(int cluster_count_, double period_) :
+	cluster_count(cluster_count_),
+	period(period_),
+	clusters(),
+	timestamps()
+>>>>>>> Choose the best period
 {
 	double s = 0;
 	for (int i = 0; i < cluster_count; ++i) {
@@ -77,6 +85,19 @@ double EMSqdist::maximisation() {
 	return sqrt(shift);
 }
 
+<<<<<<< HEAD
+void EMSqdist::add_time(uint32_t time) {
+	timestamps.push_back(Timestamp(time, cluster_count));
+=======
+double EMSqdist::time_to_phase(uint32_t time, double period_) {
+	float phase = fmodf(time, period_) / period_;
+	if (phase > 0.5) {
+		phase -= 1;
+	}
+	return phase * M_PI * 2;
+>>>>>>> Choose the best period
+}
+
 void EMSqdist::train() {
 	double shift = 555;
 	do {
@@ -86,10 +107,31 @@ void EMSqdist::train() {
 	} while (isnan(shift) || shift > 1E-3);
 }
 
+<<<<<<< HEAD
+=======
 void EMSqdist::add_time(uint32_t time) {
 	timestamps.push_back(Timestamp(time, cluster_count, period));
 }
 
+EMSqdist::Timestamp::Timestamp(uint32_t time, int cluster_count, double period_) :
+	phase(time_to_phase(time, period_)),
+	alpha()
+{
+	double s = 0;
+	double r;
+
+	for (int i = cluster_count; i; --i) {
+		r = float(rand()) / RAND_MAX;
+		s += r;
+		alpha.push_back(r);
+	}
+
+	for (int i = cluster_count - 1; i >= 0; --i) {
+		alpha[i] /= s;
+	}
+}
+
+>>>>>>> Choose the best period
 EMSqdist::Cluster::Cluster() :
 	xx(),
 	yy(),

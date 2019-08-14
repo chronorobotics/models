@@ -4,7 +4,7 @@
 !Mean	 0
 #None     0
 !Hist 1 4 12 24
-HyT-CEM 20 30 40 50 60 70 80 90
+HyT-CEM 90
 
 #GMM 	 1 2 3 4 5
 #VonMises 1 2 3 4 5 

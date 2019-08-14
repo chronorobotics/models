@@ -9,7 +9,7 @@
 class EMVonMises : public EMCircular
 {
 	public:
-		EMVonMises(int cluster_count_);
+		EMVonMises(int cluster_count_, double period_);
 
 		void train();
 		void add_time(uint32_t time);

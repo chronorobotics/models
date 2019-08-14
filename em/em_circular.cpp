@@ -1,23 +1,24 @@
 #include <math.h>
 #include "em_circular.h"
 
-EMCircular::EMCircular(int cluster_count_) :
+EMCircular::EMCircular(int cluster_count_, double period_) :
 	cluster_count(cluster_count_),
+	period(period_),
 	timestamps()
 {
 
 }
 
-double EMCircular::time_to_phase(uint32_t time) {
-	float phase = fmodf(time, 604800.0f) / 604800;
+double EMCircular::time_to_phase(uint32_t time, double period_) {
+	float phase = fmodf(time, period_) / period_;
 	if (phase > 0.5) {
 		phase -= 1;
 	}
 	return phase * M_PI * 2;
 }
 
-EMCircular::Timestamp::Timestamp(uint32_t time, int cluster_count) :
-	phase(time_to_phase(time)),
+EMCircular::Timestamp::Timestamp(uint32_t time, int cluster_count, double period_) :
+	phase(time_to_phase(time, period_)),
 	alpha()
 {
 	double s = 0;
