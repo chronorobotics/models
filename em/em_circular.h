@@ -8,10 +8,11 @@
 class EMCircular
 {
 	public:
+		EMCircular();
 		EMCircular(int cluster_count_);
 
 		virtual void train() = 0;
-		virtual void add_time(uint32_t time) = 0;
+		virtual void add_time(uint32_t time, double value) = 0;
 
 		virtual void save(FILE* file, bool lossy = false) = 0;
 		virtual void load(FILE* file) = 0;
@@ -28,8 +29,9 @@ class EMCircular
 
 		class Timestamp {
 			public:
-				Timestamp(uint32_t time, int cluster_count);
+				Timestamp(uint32_t time, int cluster_count, double weight_);
 				double phase;
+				double weight;
 				std::vector<double> alpha;
 		};
 

@@ -4,10 +4,9 @@
 #include "em_sqdist.h"
 
 EMSqdist::EMSqdist() :
-	cluster_count(),
+	EMCircular(),
 	clusters(),
-	timestamps(),
-	timestamps_weight()
+	timestamps_weight(0)
 {
 
 }
@@ -52,7 +51,6 @@ void EMSqdist::expectation() {
 double EMSqdist::maximisation() {
 	double shift;
 	std::cerr << "Performing maximisation ..." << std::endl;
-
 	for (int i = 0; i < clusters.size(); ++i) {
 		double last_xx = clusters[i].xx;
 		double last_yy = clusters[i].yy;
@@ -97,7 +95,7 @@ void EMSqdist::train() {
 }
 
 void EMSqdist::add_time(uint32_t time, double value) {
-	timestamps.push_back(Timestamp(time, value, cluster_count));
+	timestamps.push_back(Timestamp(time, cluster_count, value));
 	timestamps_weight += value;
 }
 

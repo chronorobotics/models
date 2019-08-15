@@ -6,9 +6,18 @@
 #include <gsl/gsl_sf_bessel.h>
 #include "em_von_mises.h"
 
+EMVonMises::EMVonMises() :
+	EMCircular(),
+	clusters(),
+	timestamps_weight(0)
+{
+
+}
+
 EMVonMises::EMVonMises(int cluster_count_) :
 	EMCircular(cluster_count_),
-	clusters()
+	clusters(),
+	timestamps_weight(0)
 {
 	double s = 0;
 	for (int i = 0; i < cluster_count; ++i) {
@@ -51,15 +60,15 @@ double EMVonMises::maximisation(bool keep_kappa) {
 
 		double s = 0;
 		for (int j = 0; j < timestamps.size(); ++j) {
-			s += timestamps[j].alpha[i];
+			s += timestamps[j].alpha[i] * timestamps[j].weight;
 		}
-		clusters[i].weight = s / timestamps.size();
+		clusters[i].weight = s / timestamps_weight;
 
 		double mean_re = 0;
 		double mean_im = 0;
 		for (int j = 0; j < timestamps.size(); ++j) {
-			mean_re += cos(timestamps[j].phase) * timestamps[j].alpha[i];
-			mean_im += sin(timestamps[j].phase) * timestamps[j].alpha[i];
+			mean_re += cos(timestamps[j].phase) * timestamps[j].alpha[i] * timestamps[j].weight;
+			mean_im += sin(timestamps[j].phase) * timestamps[j].alpha[i] * timestamps[j].weight;
 		}
 		mean_re /= s;
 		mean_im /= s;
@@ -83,8 +92,9 @@ void EMVonMises::train() {
 	} while (isnan(shift) || shift > 1E-7);
 }
 
-void EMVonMises::add_time(uint32_t time) {
-	timestamps.push_back(Timestamp(time, cluster_count));
+void EMVonMises::add_time(uint32_t time, double value) {
+	timestamps.push_back(Timestamp(time, cluster_count, value));
+	timestamps_weight += value;
 }
 
 EMVonMises::Cluster::Cluster() :

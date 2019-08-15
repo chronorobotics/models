@@ -9,10 +9,11 @@
 class EMVonMises : public EMCircular
 {
 	public:
+		EMVonMises();
 		EMVonMises(int cluster_count_);
 
 		void train();
-		void add_time(uint32_t time);
+		void add_time(uint32_t time, double value);
 
 		void save(FILE* file, bool lossy = false);
 		void load(FILE* file);
@@ -50,6 +51,7 @@ class EMVonMises : public EMCircular
 		};
 
 		std::vector<Cluster> clusters;
+		double timestamps_weight;
 };
 
 #endif // EM_VON_MISES_H
