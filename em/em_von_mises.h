@@ -4,7 +4,9 @@
 #include <stdint.h>
 #include <vector>
 
-class EMVonMises
+#include "em_circular.h"
+
+class EMVonMises : public EMCircular
 {
 	public:
 		EMVonMises(int cluster_count_);
@@ -24,9 +26,6 @@ class EMVonMises
 	private:
 		void expectation();
 		double maximisation(bool keep_kappa);
-
-		int cluster_count;
-		static double time_to_phase(uint32_t time);
 
 		class Cluster {
 			public:
@@ -50,15 +49,7 @@ class EMVonMises
 				static void mean_fdf (double x, void* params, double* y, double* dy);
 		};
 
-		class Timestamp {
-			public:
-				Timestamp(uint32_t time, int cluster_count);
-				double phase;
-				std::vector<double> alpha;
-		};
-
 		std::vector<Cluster> clusters;
-		std::vector<Timestamp> timestamps;
 };
 
 #endif // EM_VON_MISES_H
