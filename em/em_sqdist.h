@@ -4,7 +4,9 @@
 #include <stdint.h>
 #include <vector>
 
-class EMSqdist
+#include "em_circular.h"
+
+class EMSqdist : public EMCircular
 {
 	public:
 		EMSqdist(int cluster_count_);
@@ -25,9 +27,6 @@ class EMSqdist
 		void expectation();
 		double maximisation();
 
-		int cluster_count;
-		static double time_to_phase(uint32_t time);
-
 		class Cluster {
 			public:
 				Cluster();
@@ -45,15 +44,7 @@ class EMSqdist
 				double density_at(double phase) const;
 		};
 
-		class Timestamp {
-			public:
-				Timestamp(uint32_t time, int cluster_count);
-				double phase;
-				std::vector<double> alpha;
-		};
-
 		std::vector<Cluster> clusters;
-		std::vector<Timestamp> timestamps;
 };
 
 #endif // EM_SQDIST_H

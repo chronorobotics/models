@@ -7,9 +7,8 @@
 #include "em_von_mises.h"
 
 EMVonMises::EMVonMises(int cluster_count_) :
-	cluster_count(cluster_count_),
-	clusters(),
-	timestamps()
+	EMCircular(cluster_count_),
+	clusters()
 {
 	double s = 0;
 	for (int i = 0; i < cluster_count; ++i) {
@@ -75,14 +74,6 @@ double EMVonMises::maximisation(bool keep_kappa) {
 	return sqrt(shift);
 }
 
-double EMVonMises::time_to_phase(uint32_t time) {
-	float phase = fmodf(time, 604800.0f) / 604800;
-	if (phase > 0.5) {
-		phase -= 1;
-	}
-	return phase * M_PI * 2;
-}
-
 void EMVonMises::train() {
 	double shift = 555;
 	do {
@@ -94,24 +85,6 @@ void EMVonMises::train() {
 
 void EMVonMises::add_time(uint32_t time) {
 	timestamps.push_back(Timestamp(time, cluster_count));
-}
-
-EMVonMises::Timestamp::Timestamp(uint32_t time, int cluster_count) :
-	phase(time_to_phase(time)),
-	alpha()
-{
-	double s = 0;
-	double r;
-
-	for (int i = cluster_count; i; --i) {
-		r = float(rand()) / RAND_MAX;
-		s += r;
-		alpha.push_back(r);
-	}
-
-	for (int i = cluster_count - 1; i >= 0; --i) {
-		alpha[i] /= s;
-	}
 }
 
 EMVonMises::Cluster::Cluster() :
