@@ -7,7 +7,9 @@
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_multiroots.h>
 
-class EMTruncSqdist
+#include "em_circular.h"
+
+class EMTruncSqdist : public EMCircular
 {
 	public:
 		EMTruncSqdist(int cluster_count_);
@@ -27,9 +29,6 @@ class EMTruncSqdist
 	private:
 		void expectation();
 		double maximisation();
-
-		int cluster_count;
-		static double time_to_phase(uint32_t time);
 
 		class Cluster {
 			public:
@@ -63,15 +62,7 @@ class EMTruncSqdist
 				static int estimation_f(const gsl_vector* X, void* params, gsl_vector* f);
 		};
 
-		class Timestamp {
-			public:
-				Timestamp(uint32_t time, int cluster_count);
-				double phase;
-				std::vector<double> alpha;
-		};
-
 		std::vector<Cluster> clusters;
-		std::vector<Timestamp> timestamps;
 };
 
 #endif // EM_TRUNC_SQDIST_H

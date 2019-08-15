@@ -5,9 +5,8 @@
 #include <sstream>
 
 EMTruncSqdist::EMTruncSqdist(int cluster_count_) :
-	cluster_count(cluster_count_),
-	clusters(),
-	timestamps()
+	EMCircular(cluster_count_),
+	clusters()
 {
 	double s = 0;
 	for (int i = 0; i < cluster_count; ++i) {
@@ -90,14 +89,6 @@ double EMTruncSqdist::maximisation() {
 	return sqrt(shift);
 }
 
-double EMTruncSqdist::time_to_phase(uint32_t time) {
-	float phase = fmodf(time, 604800.0f) / 604800;
-	if (phase > 0.5) {
-		phase -= 1;
-	}
-	return phase * M_PI * 2;
-}
-
 void EMTruncSqdist::train() {
 	double shift = 555;
 	int i = 0;
@@ -111,24 +102,6 @@ void EMTruncSqdist::train() {
 
 void EMTruncSqdist::add_time(uint32_t time) {
 	timestamps.push_back(Timestamp(time, cluster_count));
-}
-
-EMTruncSqdist::Timestamp::Timestamp(uint32_t time, int cluster_count) :
-	phase(time_to_phase(time)),
-	alpha()
-{
-	double s = 0;
-	double r;
-
-	for (int i = cluster_count; i; --i) {
-		r = float(rand()) / RAND_MAX;
-		s += r;
-		alpha.push_back(r);
-	}
-
-	for (int i = cluster_count - 1; i >= 0; --i) {
-		alpha[i] /= s;
-	}
 }
 
 EMTruncSqdist::Cluster::Cluster() :
