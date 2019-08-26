@@ -24,14 +24,32 @@ void EMMultiAlternative::expectation() {
 	std::cerr << "Performing expectation ..." << std::endl;
 	std::cout << clusters[0].mean[0] << std::endl;
 	for (int i = 0; i < measurements.size(); ++i) {
-		double s = 0;
-		for (int j = 0; j < clusters.size(); ++j) {
+		//double s = 0;
+		/*for (int j = 0; j < clusters.size(); ++j) {
 			double a = clusters[j].probability_at(measurements[i].value);
 			s += a;
 		}
 
 		for (int j = 0; j < clusters.size(); ++j) {
 			measurements[i].alpha[j] /= s;
+		}*/
+		for (int j = 0; j < clusters.size(); ++j) {
+			double a = 1;
+			for (int k = 0; k < clusters.size(); ++k) {
+				if (j == k) {
+					continue;
+				}
+				double b = 0;
+				for (int l = 0; l < measurements[i].value.size(); ++l) {
+					if (measurements[i].value[l]) {
+						b *= clusters[k].mean[l] / clusters[j].mean[l];
+					} else {
+						b *= (1 - clusters[k].mean[l]) / (1 - clusters[j].mean[l]);
+					}
+				}
+				a += b;
+			}
+			measurements[i].alpha[j] = 1/a;
 		}
 	}
 }
@@ -79,6 +97,7 @@ void EMMultiAlternative::train() {
 		shift = maximisation();
 		std::cout << "shift = " << shift << std::endl;
 	} while (shift > 1E-3);
+	std::cout << "Clustering done" << std::endl;
 }
 
 void EMMultiAlternative::add_value(std::vector<bool> value) {
@@ -158,7 +177,7 @@ void EMMultiAlternative::print() {
 std::vector<double> EMMultiAlternative::get_alpha_at(std::vector<bool> value) const {
 	std::vector<double> result;
 	result.resize(cluster_count, 0);
-	double s = 0;
+	/*double s = 0;
 
 	for (int i = 0; i < clusters.size(); ++i) {
 		double foo = clusters[i].weight * clusters[i].probability_at(value);
@@ -168,6 +187,24 @@ std::vector<double> EMMultiAlternative::get_alpha_at(std::vector<bool> value) co
 
 	for (int i = 0; i < clusters.size(); ++i) {
 		result[i] /= s;
+	}*/
+	for (int i = 0; i < clusters.size(); ++i) {
+		double a = 1;
+		for (int j = 0; j < clusters.size(); ++j) {
+			if (i == j) {
+				continue;
+			}
+			double b = 0;
+			for (int k = 0; k < value.size(); ++k) {
+				if (value[k]) {
+					b *= clusters[j].mean[k] / clusters[i].mean[k];
+				} else {
+					b *= (1 - clusters[j].mean[k]) / (1 - clusters[i].mean[k]);
+				}
+			}
+			a += b * (clusters[j].weight / clusters[i].weight);
+		}
+		result[i] = 1/a;
 	}
 
 	return result;
