@@ -15,7 +15,7 @@ CExpectation::CExpectation(int idd, int dimension_) :
 	dimension(dimension_),
 	models(),
 	means(),
-	class_model(7, dimension_)
+	class_model(5, dimension_)
 {
 	id=idd;
 	firstTime = -1;
@@ -75,6 +75,7 @@ int CExpectation::add_v(uint32_t time, std::vector<bool> state)
 void CExpectation::update(int modelOrder, unsigned int* times, float* signal, int length)
 {
 	class_model.train();
+	class_model.print();
 	means = class_model.get_means();
 	std::cout << numSamples << " " << means.size() << " " << models.size() << std::endl;
 	for (int i = 0; i < numSamples; ++i) {

@@ -39,19 +39,23 @@ void EMMultiAlternative::expectation() {
 				if (j == k) {
 					continue;
 				}
-				double b = 0;
+				double b = 1;
 				for (int l = 0; l < measurements[i].value.size(); ++l) {
 					if (measurements[i].value[l]) {
 						b *= clusters[k].mean[l] / clusters[j].mean[l];
 					} else {
 						b *= (1 - clusters[k].mean[l]) / (1 - clusters[j].mean[l]);
 					}
+					/*if (j == 0 && k == 1) {
+						std::cout << b << " ";
+					}*/
 				}
 				a += b;
 			}
 			measurements[i].alpha[j] = 1/a;
 		}
 	}
+	//std::cout << std::endl;
 }
 
 double EMMultiAlternative::maximisation() { //TODO
@@ -78,7 +82,7 @@ double EMMultiAlternative::maximisation() { //TODO
 			}
 		}
 		for (int k = 0; k < dimension; ++k) {
-			clusters[i].mean[k] = mean[k] / s;
+			clusters[i].mean[k] = std::max(std::min(mean[k] / s, 0.999), 0.001);
 			double delta = last_mean[k] - clusters[i].mean[k];
 			shift += delta*delta;
 		}
@@ -194,7 +198,7 @@ std::vector<double> EMMultiAlternative::get_alpha_at(std::vector<bool> value) co
 			if (i == j) {
 				continue;
 			}
-			double b = 0;
+			double b = 1;
 			for (int k = 0; k < value.size(); ++k) {
 				if (value[k]) {
 					b *= clusters[j].mean[k] / clusters[i].mean[k];

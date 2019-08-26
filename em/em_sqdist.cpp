@@ -97,6 +97,7 @@ void EMSqdist::train() {
 void EMSqdist::add_time(uint32_t time, double value) {
 	timestamps.push_back(Timestamp(time, cluster_count, value));
 	timestamps_weight += value;
+	std::cout << "adding time with weight:" << value << std::endl;
 }
 
 EMSqdist::Cluster::Cluster() :
