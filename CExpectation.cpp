@@ -192,6 +192,7 @@ int CExpectation::load(FILE* file)
 int CExpectation::exportToArray(double* array,int maxLen)
 {
 	int pos = 0;
+	array[pos++] = TT_EXPECTATION;
 	array[pos++] = models.size();
 	array[pos++] = dimension;
 	for (int i = 0; i < models.size(); ++i) {
@@ -207,7 +208,7 @@ int CExpectation::importFromArray(double* array,int len)
 {
 	int pos = 0;
 	type = (ETemporalType)array[pos++];
-	if (type != TT_MEAN) std::cerr << "Error loading the model, type mismatch." << std::endl;
+	if (type != TT_EXPECTATION) std::cerr << "Error loading the model, type mismatch." << std::endl;
 	int size = array[pos++];
 	dimension = array[pos++];
 	means.resize(size);
@@ -219,7 +220,6 @@ int CExpectation::importFromArray(double* array,int len)
 		}
 		models[i].importFromArray(array, len, pos);
 	}
-	update(0);
 	return pos;
 }
 
