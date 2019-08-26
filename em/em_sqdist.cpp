@@ -72,9 +72,9 @@ double EMSqdist::maximisation() {
 		clusters[i].xx = mean_re / s;
 		clusters[i].yy = mean_im / s;
 		double norm = sqrt(clusters[i].xx*clusters[i].xx + clusters[i].yy*clusters[i].yy);
-		if (norm > 0.99) {
-			clusters[i].xx *= 0.99/norm;
-			clusters[i].yy *= 0.99/norm;
+		if (norm > 0.9) {
+			clusters[i].xx *= 0.9/norm;
+			clusters[i].yy *= 0.9/norm;
 		}
 
 		double delta_xx = last_xx - clusters[i].xx;

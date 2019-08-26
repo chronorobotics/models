@@ -75,7 +75,6 @@ int CExpectation::add_v(uint32_t time, std::vector<bool> state)
 void CExpectation::update(int modelOrder, unsigned int* times, float* signal, int length)
 {
 	class_model.train();
-	class_model.print();
 	means = class_model.get_means();
 	std::cout << numSamples << " " << means.size() << " " << models.size() << std::endl;
 	for (int i = 0; i < numSamples; ++i) {
@@ -87,6 +86,7 @@ void CExpectation::update(int modelOrder, unsigned int* times, float* signal, in
 
 	for (int i = 0; i < models.size(); ++i) {
 		models[i].train();
+		models[i].print();
 	}
 
 	//class_model.print();
