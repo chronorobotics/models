@@ -340,14 +340,12 @@ int CPythonHyperTime::exportToArray(double* array,int maxLen)
         //std::cout << "pozice " << i << " vkladana hodnota " << temp_array[i] << std::endl;
         array[i] = temp_array[i];
         //std::cout << "pozice " << i << " vlozena hodnota " << array[i] << std::endl;
-        pos++;
     }
-
 
     Py_DECREF(numpyArray5);
     //Py_DECREF(pArray5);
     Py_XDECREF(pFunc5);
-    return pos;
+		return length_of_array;
 }
 
 int CPythonHyperTime::importFromArray(double* array,int len)
