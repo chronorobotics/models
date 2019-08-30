@@ -63,6 +63,9 @@ class CExpectation : public CTemporal
 		std::vector<EMSqdist> models;
 		std::vector<std::vector<double> > means;
 		EMMultiAlternative class_model;
+
+	public:
+		std::vector<float> corrections;
 };
 
 #endif // CEXPECTATION_H

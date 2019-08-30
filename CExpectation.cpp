@@ -30,6 +30,8 @@ CExpectation::CExpectation(int idd, int dimension_) :
 		models.push_back(EMSqdist(idd));
 	}
 
+	corrections.resize(dimension_, 1);
+
 	srandom(time(0));
 }
 
@@ -169,6 +171,9 @@ int CExpectation::save(FILE* file, bool lossy)
 		}
 		models[i].save(file, lossy);
 	}
+	for (int i = 0; i < dimension; ++i) {
+		fwrite(&(corrections[i]), sizeof(float), 1, file);
+	}
 	return 0;
 }
 
@@ -186,6 +191,10 @@ int CExpectation::load(FILE* file)
 		}
 		models[i].load(file);
 	}
+	corrections.resize(dimension);
+	for (int i = 0; i < dimension; ++i) {
+		fread(&(corrections[i]), sizeof(float), 1, file);
+	}
 	return 0;
 }
 
@@ -200,6 +209,9 @@ int CExpectation::exportToArray(double* array,int maxLen)
 			array[pos++] = means[i][j];
 		}
 		models[i].exportToArray(array, maxLen, pos);
+	}
+	for (int i = 0; i < dimension; ++i) {
+		array[pos++] = corrections[i];
 	}
 	return pos;
 }
@@ -219,6 +231,10 @@ int CExpectation::importFromArray(double* array,int len)
 			means[i][j] = array[pos++];
 		}
 		models[i].importFromArray(array, len, pos);
+	}
+	corrections.resize(dimension);
+	for (int i = 0; i < dimension; ++i) {
+		corrections[i] = array[pos++];
 	}
 	return pos;
 }
