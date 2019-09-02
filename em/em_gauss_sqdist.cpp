@@ -21,6 +21,7 @@ EMGaussSqdist::EMGaussSqdist(int cluster_count_) :
 {
 	double s = 0;
 	for (int i = 0; i < cluster_count; ++i) {
+		clusters.push_back(Cluster());
 		s += clusters[i].weight;
 	}
 
@@ -54,7 +55,7 @@ void EMGaussSqdist::expectation() {
 	}
 }
 
-double EMGaussSqdist::maximisation() { //TODO
+double EMGaussSqdist::maximisation() {
 	double shift;
 	std::cerr << "Performing maximisation ..." << std::endl;
 	for (int i = 0; i < clusters.size(); ++i) {
@@ -136,7 +137,7 @@ void EMGaussSqdist::train() {
 	do {
 		expectation();
 		shift = maximisation();
-		std::cout << "shift = " << shift << std::endl;
+		std::cerr << "shift = " << shift << std::endl;
 	} while (shift > 1E-3);
 }
 
@@ -162,7 +163,7 @@ EMGaussSqdist::Cluster::Cluster() :
 	tyy = r*sin(f);
 	double a = float(rand()) / RAND_MAX + 1;
 	double b = float(rand()) / RAND_MAX + 1;
-	double c = float(rand()) / RAND_MAX + 1;
+	double c = float(rand()) / RAND_MAX * sqrt(a*b);
 	det = a*b - c*c;
 	cxx = b / det;
 	cyy = a / det;

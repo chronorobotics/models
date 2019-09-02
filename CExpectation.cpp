@@ -56,7 +56,7 @@ void CExpectation::print(bool verbose)
 
 float CExpectation::estimate_v(double x, double y, uint32_t time)
 {
-	return model.get_density_at(x, y, time);
+	return model.get_density_at(x, y, time) * pedestrians;
 }
 
 float CExpectation::estimate(uint32_t time)
