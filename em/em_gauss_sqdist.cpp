@@ -109,8 +109,13 @@ double EMGaussSqdist::maximisation() {
 		deviation_x /= s;
 		deviation_y /= s;
 		covariance /= s;
-		if (deviation_x <= 0.001) deviation_x = 0.001;
-		if (deviation_y <= 0.001) deviation_y = 0.001;
+		double foo = sqrt(deviation_x*deviation_y);
+		if (foo <= 0.7) {
+			foo = 0.7 / foo;
+			deviation_x *= foo;
+			deviation_y *= foo;
+			covariance *= foo;
+		}
 
 		clusters[i].det = deviation_x*deviation_y - covariance*covariance;
 		clusters[i].cxx = deviation_y / clusters[i].det;
