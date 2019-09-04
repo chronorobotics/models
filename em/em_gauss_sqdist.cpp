@@ -109,9 +109,9 @@ double EMGaussSqdist::maximisation() {
 		deviation_x /= s;
 		deviation_y /= s;
 		covariance /= s;
-		double foo = sqrt(deviation_x*deviation_y);
-		if (foo <= 0.7) {
-			foo = 0.7 / foo;
+		double foo = sqrt(deviation_x*deviation_y - covariance*covariance);
+		if (foo <= 0.4) {
+			foo = 0.4 / foo;
 			deviation_x *= foo;
 			deviation_y *= foo;
 			covariance *= foo;
