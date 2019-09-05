@@ -10,7 +10,7 @@
 #include <vector>
 #include "CTemporal.h"
 
-#include "em/em_gauss_sqdist.h"
+#include "em/em_sqdist.h"
 
 class CExpectation : public CTemporal
 {
@@ -21,12 +21,11 @@ class CExpectation : public CTemporal
 		void init(int iMaxPeriod, int elements, int numClasses);
 
 		//adds a serie of measurements to the data
-		int add(uint32_t time, float state);
-		int add_v(double x, double y, uint32_t time);
+		int add(uint32_t time,float state);
+
 
 		//estimates the probability for the given times - using stored histogram
 		float estimate(uint32_t time);
-		float estimate_v(double x, double y, uint32_t time);
 
 		//predicts the probability for the given times - using updated histogram
 		float predict(uint32_t time);
@@ -44,8 +43,21 @@ class CExpectation : public CTemporal
 	private:
 		int id;
 
-		int pedestrians;
-		EMGaussSqdist model;
+		class TimeSample {
+			public:
+				TimeSample();
+				TimeSample(long int t_, float v_);
+				long int t;
+				float v;
+		};
+		TimeSample sampleArray[1000000];
+		int numSamples;
+
+		EMSqdist positive;
+		EMSqdist negative;
+
+		int positives;
+		int negatives;
 };
 
 #endif // CEXPECTATION_H
