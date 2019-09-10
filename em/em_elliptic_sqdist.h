@@ -3,6 +3,9 @@
 
 #include <stdint.h>
 #include <vector>
+#include <iostream>
+#include <fstream>
+#include <string>
 
 #include "em_circular.h"
 
@@ -10,7 +13,8 @@ class EMEllipticSqdist : public EMCircular
 {
 	public:
 		EMEllipticSqdist();
-		EMEllipticSqdist(int cluster_count_);
+		EMEllipticSqdist(int cluster_count_, std::string filename);
+		~EMEllipticSqdist();
 
 		void train();
 		void add_time(uint32_t time, double value);
@@ -48,6 +52,7 @@ class EMEllipticSqdist : public EMCircular
 
 		std::vector<Cluster> clusters;
 		double timestamps_weight;
+		std::ofstream test;
 };
 
 #endif // EM_ELLIPTIC_SQDIST_H
