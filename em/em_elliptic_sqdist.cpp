@@ -8,17 +8,15 @@
 EMEllipticSqdist::EMEllipticSqdist() :
 	EMCircular(),
 	clusters(),
-	timestamps_weight(0),
-	test()
+	timestamps_weight(0)
 {
 
 }
 
-EMEllipticSqdist::EMEllipticSqdist(int cluster_count_, std::string filename) :
+EMEllipticSqdist::EMEllipticSqdist(int cluster_count_) :
 	EMCircular(cluster_count_),
 	clusters(),
-	timestamps_weight(0),
-	test(filename)
+	timestamps_weight(0)
 {
 	double s = 0;
 	for (int i = 0; i < cluster_count; ++i) {
@@ -29,10 +27,6 @@ EMEllipticSqdist::EMEllipticSqdist(int cluster_count_, std::string filename) :
 	for (int i = 0; i < cluster_count; ++i) {
 		clusters[i].weight /= s;
 	}
-}
-
-EMEllipticSqdist::~EMEllipticSqdist() {
-	test.close();
 }
 
 void EMEllipticSqdist::expectation() {
@@ -108,8 +102,6 @@ double EMEllipticSqdist::maximisation() {
 		}
 		//clusters[i].aa = sqrt(1 - x2);
 
-		test << m1_re << " " << m1_im << " " << clusters[i].aa << " " << clusters[i].weight << " ";
-
 		double delta_xx = last_xx - clusters[i].xx * cos(clusters[i].t0);
 		double delta_yy = last_yy - clusters[i].xx * sin(clusters[i].t0);
 		double delta_aa = last_aa - clusters[i].aa;
@@ -117,7 +109,6 @@ double EMEllipticSqdist::maximisation() {
 		shift += delta_xx*delta_xx + delta_yy*delta_yy + delta_aa*delta_aa + delta_weight*delta_weight;
 		//shift = std::max(shift, std::max(delta_aa, std::max(delta_weight, std::max(delta_xx, delta_yy))));
 	}
-	test << std::endl;
 	return sqrt(shift);
 }
 
