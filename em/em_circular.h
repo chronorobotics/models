@@ -21,7 +21,9 @@ class EMCircular
 
 		virtual void print() = 0;
 
-		virtual double get_density_at(uint32_t time) = 0;
+		double get_density_at(uint32_t time) const;
+		virtual double get_density_at_d(double phase) const = 0;
+		double get_loglikelihood() const;
 
 	protected:
 		int cluster_count;

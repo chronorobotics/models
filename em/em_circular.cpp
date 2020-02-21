@@ -41,3 +41,15 @@ EMCircular::Timestamp::Timestamp(uint32_t time, int cluster_count, double weight
 		alpha[i] /= s;
 	}
 }
+
+double EMCircular::get_loglikelihood() const {
+	double result = 0;
+	for (unsigned int i = 0; i < timestamps.size(); ++i) {
+		result += log(get_density_at_d(timestamps[i].phase));
+	}
+	return result;
+}
+
+double EMCircular::get_density_at(uint32_t time) const {
+	return get_density_at_d(time_to_phase(time));
+}

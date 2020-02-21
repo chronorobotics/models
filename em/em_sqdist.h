@@ -22,7 +22,7 @@ class EMSqdist : public EMCircular
 
 		void print();
 
-		double get_density_at(uint32_t time);
+		double get_density_at_d(double phase) const;
 
 	private:
 		void expectation();
@@ -47,6 +47,9 @@ class EMSqdist : public EMCircular
 
 		std::vector<Cluster> clusters;
 		double timestamps_weight;
+
+		void U(double zr, double zi, double fr, double fi, double w, double& vr, double& vi);
+		void mle(int c, double s, double& xhat, double& yhat);
 };
 
 #endif // EM_SQDIST_H

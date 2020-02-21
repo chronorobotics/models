@@ -22,7 +22,7 @@ class EMVonMises : public EMCircular
 
 		void print();
 
-		double get_density_at(uint32_t time);
+		double get_density_at_d(double phase) const;
 
 	private:
 		void expectation();

@@ -35,15 +35,15 @@ EMVonMises::EMVonMises(int cluster_count_) :
 void EMVonMises::expectation() {
 	std::cerr << "Performing expectation ..." << std::endl;
 
-	for (int i = 0; i < timestamps.size(); ++i) {
+	for (unsigned int i = 0; i < timestamps.size(); ++i) {
 		double s = 0;
-		for (int j = 0; j < clusters.size(); ++j) {
-			double a = clusters[j].density_at(timestamps[i].phase);
+		for (unsigned int j = 0; j < clusters.size(); ++j) {
+			double a = clusters[j].density_at(timestamps[i].phase) * clusters[j].weight;
 			timestamps[i].alpha[j] = a;
 			s += a;
 		}
 
-		for (int j = 0; j < clusters.size(); ++j) {
+		for (unsigned int j = 0; j < clusters.size(); ++j) {
 			timestamps[i].alpha[j] /= s;
 		}
 	}
@@ -53,22 +53,22 @@ double EMVonMises::maximisation(bool keep_kappa) {
 	double shift = 0;
 	std::cerr << "Performing maximisation ..." << std::endl;
 
-	for (int i = 0; i < clusters.size(); ++i) {
+	for (unsigned int i = 0; i < clusters.size(); ++i) {
 		double last_kappa = clusters[i].kappa;
 		double last_mu = clusters[i].mu;
 		double last_weight = clusters[i].weight;
 
 		double s = 0;
-		for (int j = 0; j < timestamps.size(); ++j) {
-			s += timestamps[j].alpha[i] * timestamps[j].weight;
+		for (unsigned int j = 0; j < timestamps.size(); ++j) {
+			s += timestamps[j].alpha[i];
 		}
-		clusters[i].weight = s / timestamps_weight;
+		clusters[i].weight = s / timestamps.size();
 
 		double mean_re = 0;
 		double mean_im = 0;
-		for (int j = 0; j < timestamps.size(); ++j) {
-			mean_re += cos(timestamps[j].phase) * timestamps[j].alpha[i] * timestamps[j].weight;
-			mean_im += sin(timestamps[j].phase) * timestamps[j].alpha[i] * timestamps[j].weight;
+		for (unsigned int j = 0; j < timestamps.size(); ++j) {
+			mean_re += cos(timestamps[j].phase) * timestamps[j].alpha[i];
+			mean_im += sin(timestamps[j].phase) * timestamps[j].alpha[i];
 		}
 		mean_re /= s;
 		mean_im /= s;
@@ -85,11 +85,14 @@ double EMVonMises::maximisation(bool keep_kappa) {
 
 void EMVonMises::train() {
 	double shift = 555;
+	double dl;
 	do {
+		double l = get_loglikelihood();
 		expectation();
 		shift = maximisation(shift > 0.001);
-		std::cout << "shift = " << shift << std::endl;
-	} while (isnan(shift) || shift > 1E-7);
+		dl = get_loglikelihood() - l;
+		std::cout << "dl = " << dl << std::endl;
+	} while (isnan(shift) || dl > 1.0);
 }
 
 void EMVonMises::add_time(uint32_t time, double value) {
@@ -181,7 +184,7 @@ void EMVonMises::Cluster::estimate_from_mean(double re, double im, bool keep_kap
 		status = gsl_root_fdfsolver_iterate (s);
 		x0 = x;
 		x = gsl_root_fdfsolver_root (s);
-		status = gsl_root_test_delta (x, x0, 0, 1e-3);
+		status = gsl_root_test_delta (x, x0, 0, 1e-30);
 
 	} while (status == GSL_CONTINUE && iter < max_iter);
 
@@ -256,8 +259,7 @@ void EMVonMises::print() {
 	std::cout << "]" << std::endl;
 }
 
-double EMVonMises::get_density_at(uint32_t time) {
-	double phase = time_to_phase(time);
+double EMVonMises::get_density_at_d(double phase) const {
 	double result = 0;
 	for (int i = 0; i < clusters.size(); ++i) {
 		result += clusters[i].weight * clusters[i].density_at(phase);

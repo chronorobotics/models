@@ -34,47 +34,39 @@ EMSqdist::EMSqdist(int cluster_count_) :
 void EMSqdist::expectation() {
 	std::cerr << "Performing expectation ..." << std::endl;
 
-	for (int i = 0; i < timestamps.size(); ++i) {
+	for (unsigned int i = 0; i < timestamps.size(); ++i) {
 		double s = 0;
-		for (int j = 0; j < clusters.size(); ++j) {
-			double a = clusters[j].density_at(timestamps[i].phase);
+		for (unsigned int j = 0; j < clusters.size(); ++j) {
+			double a = clusters[j].density_at(timestamps[i].phase) * clusters[j].weight;
 			timestamps[i].alpha[j] = a;
 			s += a;
 		}
 
-		for (int j = 0; j < clusters.size(); ++j) {
+		for (unsigned int j = 0; j < clusters.size(); ++j) {
 			timestamps[i].alpha[j] /= s;
 		}
 	}
 }
 
 double EMSqdist::maximisation() {
-	double shift;
+	double shift = 0;
 	std::cerr << "Performing maximisation ..." << std::endl;
-	for (int i = 0; i < clusters.size(); ++i) {
+	for (unsigned int i = 0; i < clusters.size(); ++i) {
 		double last_xx = clusters[i].xx;
 		double last_yy = clusters[i].yy;
 		double last_weight = clusters[i].weight;
 
 		double s = 0;
-		for (int j = 0; j < timestamps.size(); ++j) {
-			s += timestamps[j].alpha[i] * timestamps[j].weight;
+		for (unsigned int j = 0; j < timestamps.size(); ++j) {
+			s += timestamps[j].alpha[i];
 		}
-		clusters[i].weight = s / timestamps_weight;
+		clusters[i].weight = s / timestamps.size();
 
-		double mean_re = 0;
-		double mean_im = 0;
-		for (int j = 0; j < timestamps.size(); ++j) {
-			mean_re += cos(timestamps[j].phase) * timestamps[j].alpha[i] * timestamps[j].weight;
-			mean_im += sin(timestamps[j].phase) * timestamps[j].alpha[i] * timestamps[j].weight;
-			//std::cout << timestamps[j] << std::endl;
-		}
-		clusters[i].xx = mean_re / s;
-		clusters[i].yy = mean_im / s;
+		mle(i, s, clusters[i].xx, clusters[i].yy);
 		double norm = sqrt(clusters[i].xx*clusters[i].xx + clusters[i].yy*clusters[i].yy);
-		if (norm > 0.99) {
-			clusters[i].xx *= 0.99/norm;
-			clusters[i].yy *= 0.99/norm;
+		if (norm > 0.999) {
+			clusters[i].xx *= 0.999/norm;
+			clusters[i].yy *= 0.999/norm;
 		}
 
 		double delta_xx = last_xx - clusters[i].xx;
@@ -87,11 +79,18 @@ double EMSqdist::maximisation() {
 
 void EMSqdist::train() {
 	double shift = 555;
+	double dl;
+	int i = 5;
 	do {
+		double l = get_loglikelihood();
 		expectation();
 		shift = maximisation();
-		std::cout << "shift = " << shift << std::endl;
-	} while (shift > 1E-3);
+		dl = get_loglikelihood() - l;
+		std::cout << "dl = " << dl << std::endl;
+		if (dl < 1) {
+			--i;
+		}
+	} while (i);
 }
 
 void EMSqdist::add_time(uint32_t time, double value) {
@@ -201,11 +200,43 @@ void EMSqdist::print() {
 	std::cout << "] (w = " << sum_w << ")" << std::endl;
 }
 
-double EMSqdist::get_density_at(uint32_t time) {
-	double phase = time_to_phase(time);
+double EMSqdist::get_density_at_d(double phase) const {
 	double result = 0;
 	for (int i = 0; i < clusters.size(); ++i) {
 		result += clusters[i].weight * clusters[i].density_at(phase);
 	}
 	return result;
+}
+
+void EMSqdist::U(double zr, double zi, double fr, double fi, double w, double& vr, double& vi) {
+	double a = zr - fr;
+	double b = zi - fi;
+	double c = 1 - zr*fr - zi*fi;
+	double d = zr*fi - zi*fr;
+	double e = w/(c*c + d*d);
+	vr += e*(a*c + b*d);
+	vi += e*(b*c - a*d);
+}
+
+void EMSqdist::mle(int c, double s, double& xhat, double& yhat) {
+	xhat = 0;
+	yhat = 0;
+	int i = 0;
+	while (true) {
+		double vr = 0, vi = 0;
+		double xhat_ = 0, yhat_ = 0;
+		for (unsigned int j = 0; j < timestamps.size(); ++j) {
+			U(cos(timestamps[j].phase), sin(timestamps[j].phase), xhat, yhat, timestamps[j].alpha[c], vr, vi);
+		}
+		U(vr/s, vi/s, -xhat, -yhat, 1, xhat_, yhat_);
+		double dx = xhat - xhat_;
+		double dy = yhat - yhat_;
+		xhat = xhat_;
+		yhat = yhat_;
+		double d = sqrt(dx*dx + dy*dy);
+		if (d < 1e-7) {
+			return;
+		}
+		++i;
+	}
 }
