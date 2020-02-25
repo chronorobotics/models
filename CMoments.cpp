@@ -5,7 +5,7 @@
 using namespace std;
 
 CMoments::CMoments(int idd) :
-	cluster_count(1),
+  cluster_count(5),
 	pos_estimator(),
 	neg_estimator(),
 	pos_density(),
@@ -17,8 +17,8 @@ CMoments::CMoments(int idd) :
 
 	numSamples = 0;
 
-	pos_density = DensityParams::create(this, DensityParams::SQDIST);
-	neg_density = DensityParams::create(this, DensityParams::SQDIST);
+  pos_density = DensityParams::create(this, DensityParams::SQDIST);
+  neg_density = DensityParams::create(this, DensityParams::SQDIST);
 
 	pos_estimator = pos_density->get_moment_estimator();
 	neg_estimator = neg_density->get_moment_estimator();
@@ -61,6 +61,9 @@ int CMoments::get_cluster_count() const {
 // adds new state observations at given times
 int CMoments::add(uint32_t time,float state)
 {
+  if (rand() % 100) {
+    return 0;
+  }
 	sampleArray[numSamples] = TimeSample(time, state);
 	numSamples++;
 
@@ -76,14 +79,26 @@ int CMoments::add(uint32_t time,float state)
 void CMoments::update(int modelOrder, unsigned int* times, float* signal, int length)
 {
 	pos_density->calculate();
-	neg_density->calculate();
+  //neg_density->calculate();
 
 	ofstream myfile0("0.txt");
 	ofstream myfile1("1.txt");
 	for (int i = 0; i < numSamples; ++i) {
-		myfile0 << sampleArray[i].v << std::endl;
-		myfile1 << predict(sampleArray[i].t) << std::endl;
+    if (sampleArray[i].v == 1) {
+      float f = fmod(sampleArray[i].t, 604800) / 604800 * 2*M_PI;
+      if (f > M_PI) {
+        f -= 2*M_PI;
+      }
+      myfile0 << f << " 0" << std::endl;
+    }
 	}
+  for (int t = 0; t < 1440; ++t) {
+    float f = float(t) / 1440 * 2*M_PI;
+    if (f > M_PI) {
+      f -= 2*M_PI;
+    }
+    myfile1 << f << " " << pos_density->density_at(t*420) << std::endl;
+  }
 	myfile0.close();
 	myfile1.close();
 }

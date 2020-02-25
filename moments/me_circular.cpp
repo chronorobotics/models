@@ -25,7 +25,7 @@ void MECircular::add_point(uint32_t time) {
 }
 
 double MECircular::time_to_phase(uint32_t time) {
-	float phase = fmodf(time, 86400.0f) / 86400;
+  float phase = fmodf(time, 604800.0f) / 604800;
 	if (phase > 0.5) {
 		phase -= 1;
 	}
