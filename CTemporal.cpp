@@ -43,7 +43,7 @@ CTemporal* spawnTemporalModel(ETemporalType type,int maxPeriod,int elements,int 
 		case TT_ADAPTIVE: 	temporalModel = new CTimeAdaptiveHist(0);	break;
 //		case TT_MISES: 		temporalModel = new CMises(0);			break;
 		case TT_EXPECTATION:	temporalModel = new CExpectation(elements); break;
-		case TT_MOMENTS:	temporalModel = new CMoments(0);	break;
+		case TT_MOMENTS:	temporalModel = new CMoments(elements);	break;
 		default: 		temporalModel = new CTimeNone(0);
 	}
 	temporalModel->init(maxPeriod,elements,numClasses);

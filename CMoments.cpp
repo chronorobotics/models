@@ -5,7 +5,7 @@
 using namespace std;
 
 CMoments::CMoments(int idd) :
-  cluster_count(5),
+	cluster_count(idd),
 	pos_estimator(),
 	neg_estimator(),
 	pos_density(),
