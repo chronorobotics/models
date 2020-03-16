@@ -109,7 +109,7 @@ EMGaussian::Measurement::Measurement(double value_, int cluster_count) :
 }
 
 EMGaussian::Cluster::Cluster() :
-	mu(2*float(rand()) / RAND_MAX - 1),
+	mu(30*float(rand()) / RAND_MAX),
 	sigma(float(rand()) / RAND_MAX),
 	weight(float(rand()) / RAND_MAX)
 {

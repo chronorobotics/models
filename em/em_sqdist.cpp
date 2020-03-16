@@ -94,8 +94,10 @@ void EMSqdist::train() {
 }
 
 void EMSqdist::add_time(uint32_t time, double value) {
-	timestamps.push_back(Timestamp(time, cluster_count, value));
-	timestamps_weight += value;
+	if (double(rand())/RAND_MAX < value) {
+		timestamps.push_back(Timestamp(time, cluster_count, value));
+		timestamps_weight += value;
+	}
 }
 
 EMSqdist::Cluster::Cluster() :
