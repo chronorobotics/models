@@ -28,6 +28,7 @@ typedef enum{
 	TT_MISES,
 	TT_EXPECTATION,
 	TT_MOMENTS,
+	TT_ADABOOST,
 	TT_NUMBER,
 }ETemporalType;
 

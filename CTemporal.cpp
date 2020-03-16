@@ -9,6 +9,7 @@
 #include "CHyperTime.h"
 #include "CExpectation.h"
 #include "CMoments.h"
+#include "CAdaboost.h"
 
 const char *temporalModelName[] = 
 {
@@ -23,6 +24,7 @@ const char *temporalModelName[] =
 	"VonMises",
 	"HyT-CEM",
 	"HyT-MM",
+	"Adaboost",
 	"Number",
 };
 
@@ -44,6 +46,7 @@ CTemporal* spawnTemporalModel(ETemporalType type,int maxPeriod,int elements,int 
 //		case TT_MISES: 		temporalModel = new CMises(0);			break;
 		case TT_EXPECTATION:	temporalModel = new CExpectation(elements); break;
 		case TT_MOMENTS:	temporalModel = new CMoments(elements);	break;
+		case TT_ADABOOST:	temporalModel = new CAdaboost(elements); break;
 		default: 		temporalModel = new CTimeNone(0);
 	}
 	temporalModel->init(maxPeriod,elements,numClasses);

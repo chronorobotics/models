@@ -155,7 +155,7 @@ int CExpectation::importFromArray(double* array,int len)
 {
 	int pos = 0;
 	type = (ETemporalType)array[pos++];
-	if (type != TT_MEAN) std::cerr << "Error loading the model, type mismatch." << std::endl;
+	if (type != TT_EXPECTATION) std::cerr << "Error loading the model, type mismatch." << std::endl;
 	positive.importFromArray(array, len, pos);
 	negative.importFromArray(array, len, pos);
 	positives = array[pos++];
