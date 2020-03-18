@@ -68,9 +68,9 @@ int CMoments::add(uint32_t time,float state)
 	numSamples++;
 
 	if (state > 0.5) {
-		pos_estimator->add_point(time);
+		pos_estimator->add_point(time, 1);
 	} else {
-		neg_estimator->add_point(time);
+		neg_estimator->add_point(time, 1);
 	}
 	measurements++;
 	return 0;
@@ -79,26 +79,14 @@ int CMoments::add(uint32_t time,float state)
 void CMoments::update(int modelOrder, unsigned int* times, float* signal, int length)
 {
 	pos_density->calculate();
-  //neg_density->calculate();
+	neg_density->calculate();
 
 	ofstream myfile0("0.txt");
 	ofstream myfile1("1.txt");
 	for (int i = 0; i < numSamples; ++i) {
-    if (sampleArray[i].v == 1) {
-      float f = fmod(sampleArray[i].t, 604800) / 604800 * 2*M_PI;
-      if (f > M_PI) {
-        f -= 2*M_PI;
-      }
-      myfile0 << f << " 0" << std::endl;
-    }
+		myfile0 << sampleArray[i].t << " " << sampleArray[i].v << std::endl;
+		myfile1 << sampleArray[i].t << " " << estimate(sampleArray[i].t) << std::endl;
 	}
-  for (int t = 0; t < 1440; ++t) {
-    float f = float(t) / 1440 * 2*M_PI;
-    if (f > M_PI) {
-      f -= 2*M_PI;
-    }
-    myfile1 << f << " " << pos_density->density_at(t*420) << std::endl;
-  }
 	myfile0.close();
 	myfile1.close();
 }

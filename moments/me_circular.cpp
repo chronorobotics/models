@@ -14,14 +14,14 @@ MECircular::~MECircular()
 
 }
 
-void MECircular::add_point(uint32_t time) {
+void MECircular::add_point(uint32_t time, double weight) {
 	double phase = time_to_phase(time);
 
 	for (int i = moment_count - 1; i >= 0; --i) {
-		data[2*i    ] += cos((i+1)*phase);
-		data[2*i + 1] += sin((i+1)*phase);
+		data[2*i    ] += cos((i+1)*phase) * weight;
+		data[2*i + 1] += sin((i+1)*phase) * weight;
 	}
-	count++;
+	count += weight;
 }
 
 double MECircular::time_to_phase(uint32_t time) {

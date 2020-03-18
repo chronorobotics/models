@@ -66,16 +66,16 @@ MEBicircular::MEBicircular(int moment_count_) :
 	}
 }
 
-void MEBicircular::add_point(uint32_t time) {
+void MEBicircular::add_point(uint32_t time, double weight) {
 	Phase phase(time);
 
 	for (int i = 0; i < moment_count; ++i) {
 		double foo = moment_indices[i].i1*phase.f1 + moment_indices[i].i2*phase.f2;
-		data[2*i    ] += cos(foo);
-		data[2*i + 1] += sin(foo);
+		data[2*i    ] += cos(foo) * weight;
+		data[2*i + 1] += sin(foo) * weight;
 	}
 
-	count++;
+	count += weight;
 }
 
 std::vector<double> MEBicircular::get_moments() const {

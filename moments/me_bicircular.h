@@ -27,7 +27,7 @@ class MEBicircular : public MomentEstimator
 
 		MEBicircular(int moment_count_);
 
-		void add_point(uint32_t time);
+		void add_point(uint32_t time, double weight);
 		std::vector<double> get_moments() const;
 
 		const std::vector<Index>& get_moment_indices() const;

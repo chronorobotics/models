@@ -9,12 +9,12 @@ class MomentEstimator {
 		MomentEstimator();
 		~MomentEstimator();
 
-		virtual void add_point(uint32_t time) = 0;
+		virtual void add_point(uint32_t time, double weight) = 0;
 		virtual std::vector<double> get_moments() const = 0;
 
 	protected:
 		std::vector<double> data;
-		int count;
+		double count;
 };
 
 #endif // MOMENT_ESTIMATOR_H
