@@ -1,5 +1,5 @@
-#ifndef CADABOOST_H
-#define CADABOOST_H
+#ifndef CNEURAL_H
+#define CNEURAL_H
 
 #include <stdio.h>
 #include <iostream>
@@ -10,13 +10,13 @@
 #include <vector>
 #include "CTemporal.h"
 
-#include "adaboost/adaboost.h"
+#include "neural/neuronmodel.h"
 
-class CAdaboost : public CTemporal
+class CNeural : public CTemporal
 {
 	public:
-		CAdaboost(int idd);
-		~CAdaboost();
+		CNeural(int idd);
+		~CNeural();
 
 		void init(int iMaxPeriod, int elements, int numClasses);
 
@@ -55,7 +55,7 @@ class CAdaboost : public CTemporal
 		long int min_time;
 		long int max_time;
 
-		Adaboost my_adaboost;
+		NeuronModel my_model;
 };
 
-#endif // CADABOOST_H
+#endif // CNEURAL_H

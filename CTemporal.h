@@ -29,6 +29,7 @@ typedef enum{
 	TT_EXPECTATION,
 	TT_MOMENTS,
 	TT_ADABOOST,
+	TT_NEURAL,
 	TT_NUMBER,
 }ETemporalType;
 

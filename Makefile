@@ -1,4 +1,4 @@
-OBJS=$(patsubst %.cpp,%.o,$(wildcard *.cpp) $(wildcard em/*.cpp) $(wildcard moments/*.cpp) $(wildcard adaboost/*.cpp))
+OBJS=$(patsubst %.cpp,%.o,$(wildcard *.cpp) $(wildcard em/*.cpp) $(wildcard moments/*.cpp) $(wildcard adaboost/*.cpp) $(wildcard neural/*.cpp))
 
 include ../Mk/local.Mk
 CXXINCLUDE+=-I./ -I../common 

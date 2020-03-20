@@ -50,6 +50,7 @@ int CFrelement::add(uint32_t time,float state)
 			storedFrelements[i].imagBalance = 0; 
 		}
 		firstTime = time;
+		shortestTime = time;
 	}else{
 		if (time - lastTime < shortestTime) shortestTime = time-lastTime;
 	}

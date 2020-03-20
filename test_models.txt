@@ -10,6 +10,7 @@
 #VonMises 1 2 3 4 5 
 
 !HyT-MM 5 10
-Adaboost 1 2 3 4 5
+!Adaboost 1
+Neural 4
 
 # The '#' means that model is neither calculated (in process_dataset.sh), nor evaluated (in summarize_results.sh). '!' means that the model is not calculated (because it was calculated in the past), but it's evaluated. 
