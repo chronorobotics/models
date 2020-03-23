@@ -12,6 +12,7 @@
 
 #include "moments/moment_estimator.h"
 #include "moments/density_params.h"
+#include "em/em_gaussian.h"
 
 #define MAX_ID_LENGTH 100
 	
@@ -58,10 +59,10 @@ class CMoments: public CTemporal
 				float v;
 		};
 
-		MomentEstimator* pos_estimator;
-		MomentEstimator* neg_estimator;
-		std::unique_ptr<DensityParams> pos_density;
-		std::unique_ptr<DensityParams> neg_density;
+		std::vector<MomentEstimator*> estimators;
+		std::vector<std::unique_ptr<DensityParams> > densities;
+		std::vector<double> means;
+		EMGaussian class_model;
 
 		TimeSample sampleArray[1000000];
 		int numSamples;

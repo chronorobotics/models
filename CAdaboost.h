@@ -11,6 +11,7 @@
 #include "CTemporal.h"
 
 #include "adaboost/adaboost.h"
+#include "em/em_gaussian.h"
 
 class CAdaboost : public CTemporal
 {
@@ -55,7 +56,9 @@ class CAdaboost : public CTemporal
 		long int min_time;
 		long int max_time;
 
-		Adaboost my_adaboost;
+		std::vector<Adaboost> adaboosts;
+		std::vector<double> means;
+		EMGaussian class_model;
 };
 
 #endif // CADABOOST_H
