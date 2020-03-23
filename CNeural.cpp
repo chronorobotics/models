@@ -86,16 +86,14 @@ void CNeural::update(int modelOrder, unsigned int* times, float* signal, int len
 	my_model.add_layer(std::shared_ptr<NeuronLayer>(new MinMaxLayer(3*id1)));
 	my_model.add_layer(std::shared_ptr<NeuronLayer>(new LinearLayer(9*id2, 5)));
 	my_model.add_layer(std::shared_ptr<NeuronLayer>(new MinMaxLayer(5)));
-	my_model.add_layer(std::shared_ptr<NeuronLayer>(new LinearLayer(25, 3)));
-	my_model.add_layer(std::shared_ptr<NeuronLayer>(new MinMaxLayer(3)));
-	my_model.add_layer(std::shared_ptr<NeuronLayer>(new LinearLayer(9, 1)));
+	my_model.add_layer(std::shared_ptr<NeuronLayer>(new LinearLayer(25, 1)));
 	//my_model.add_layer(std::shared_ptr<NeuronLayer>(new LinearLayer(7*id1, 1)));
 
 	double err;
 	int small = 0;
 	bool smallstep = false;
 	ofstream myfileerr("err.txt");
-	for (int i = 0; i < 20000; ++i) {
+	for (int i = 0; i < 1000000; ++i) {
 		std::cout << "iteration " << i << std::endl;
 		int batch_size = 100;
 		std::vector<double> x;
@@ -118,7 +116,7 @@ void CNeural::update(int modelOrder, unsigned int* times, float* signal, int len
 		}
 		myfileerr << err << std::endl;
 		my_model.backward();
-		my_model.step(smallstep ? 1E-3 : 1E-1);
+		my_model.step(smallstep ? 1E-3 : 1E-2);
 		/*if (i == 50000) {
 			my_model.simplify();
 		}*/
