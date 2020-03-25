@@ -4,7 +4,7 @@
 #Hist 1 2 3 4 6 
 !HyT-EM 1 2 3 4 5
 #FreMEn 1
-HyT-CEM 1 2 3 4
+HyT-CEM 1 2 3 4 5 10 15 20
 
 #GMM 	 1 2 3 4 5
 #VonMises 1 2 3 4 5 

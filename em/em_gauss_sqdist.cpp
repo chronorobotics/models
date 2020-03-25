@@ -64,8 +64,9 @@ double EMGaussSqdist::maximisation() {
 		double last_cxx = clusters[i].cxx;
 		double last_cyy = clusters[i].cyy;
 		double last_cxy = clusters[i].cxy;
-		double last_txx = clusters[i].txx;
-		double last_tyy = clusters[i].tyy;
+		double last_txx = clusters[i].txx * cos(clusters[i].tt0);
+		double last_tyy = clusters[i].txx * sin(clusters[i].tt0);
+		double last_taa = clusters[i].taa;
 		double last_weight = clusters[i].weight;
 
 		double s = 0;
@@ -74,26 +75,53 @@ double EMGaussSqdist::maximisation() {
 		}
 		clusters[i].weight = s / total_weight;
 
-		double mean_re = 0;
-		double mean_im = 0;
+		double m1_re = 0;
+		double m1_im = 0;
+		double m2_re = 0;
+		double m2_im = 0;
 		double mean_x = 0;
 		double mean_y = 0;
 		for (int j = 0; j < points.size(); ++j) {
-			mean_re += cos(points[j].phase) * points[j].alpha[i] * points[j].weight;
-			mean_im += sin(points[j].phase) * points[j].alpha[i] * points[j].weight;
-			mean_x += points[j].x * points[j].alpha[i] * points[j].weight;
-			mean_y += points[j].y * points[j].alpha[i] * points[j].weight;
+			double foo = points[j].alpha[i] * points[j].weight;
+			m1_re += cos(points[j].phase) * foo;
+			m1_im += sin(points[j].phase) * foo;
+			m2_re += cos(2*points[j].phase) * foo;
+			m2_im += sin(2*points[j].phase) * foo;
+			mean_x += points[j].x * foo;
+			mean_y += points[j].y * foo;
 		}
-		clusters[i].txx = mean_re / s;
-		clusters[i].tyy = mean_im / s;
 		mean_x /= s;
 		mean_y /= s;
 		clusters[i].ex = mean_x;
 		clusters[i].ey = mean_y;
-		double norm = sqrt(clusters[i].txx*clusters[i].txx + clusters[i].tyy*clusters[i].tyy);
-		if (norm > 0.9) {
-			clusters[i].txx *= 0.9/norm;
-			clusters[i].tyy *= 0.9/norm;
+
+		m1_re /= s;
+		m1_im /= s;
+		m2_re /= s;
+		m2_im /= s;
+
+		double x2 = m1_re*m1_re + m1_im*m1_im;
+
+		clusters[i].txx = sqrt(x2);
+		clusters[i].tt0 = atan2(m1_im, m1_re);
+
+		double m1r2 = m1_re*m1_re - m1_im*m1_im;
+		double m1i2 = 2*m1_re*m1_im;
+		double m2 = sqrt(m2_re*m2_re + m2_im*m2_im);
+		if (fabs(m1r2-m2_re) + fabs(m1i2-m2_im) > fabs(m1r2+m2_re) + fabs(m1i2+m2_im)) {
+			m2 = -m2;
+		}
+
+		clusters[i].taa = (2*x2 - m2 - 1) / (m2 - 1);
+
+		if (clusters[i].txx > 0.99) {
+			clusters[i].txx = 0.99;
+		}
+		if (clusters[i].taa > 1) {
+			clusters[i].taa = 1;
+		}
+		if (clusters[i].taa < 0.03) {
+			clusters[i].taa = 0.03;
 		}
 
 		double deviation_x = 0;
@@ -128,11 +156,13 @@ double EMGaussSqdist::maximisation() {
 		double delta_cxx = last_cxx - clusters[i].cxx;
 		double delta_cyy = last_cyy - clusters[i].cyy;
 		double delta_cxy = last_cxy - clusters[i].cxy;
-		double delta_txx = last_txx - clusters[i].txx;
-		double delta_tyy = last_tyy - clusters[i].tyy;
+		double delta_txx = last_txx - clusters[i].txx * cos(clusters[i].tt0);
+		double delta_tyy = last_tyy - clusters[i].txx * sin(clusters[i].tt0);
+		double delta_taa = last_taa - clusters[i].taa;
 		double delta_weight = last_weight - clusters[i].weight;
 		shift += delta_ex*delta_ex + delta_ey*delta_ey + delta_cxx*delta_cxx + delta_cyy*delta_cyy +
-						 delta_cxy*delta_cxy + delta_txx*delta_txx + delta_tyy*delta_tyy + delta_weight*delta_weight;
+						 delta_cxy*delta_cxy + delta_txx*delta_txx + delta_tyy*delta_tyy + delta_taa*delta_taa +
+						 delta_weight*delta_weight;
 	}
 	return sqrt(shift);
 }
@@ -158,14 +188,11 @@ EMGaussSqdist::Cluster::Cluster() :
 	cyy(),
 	cxy(),
 	det(),
-	txx(),
-	tyy(),
+	txx(double(rand())/RAND_MAX),
+	tt0(2*M_PI*double(rand())/RAND_MAX),
+	taa(float(rand()) / RAND_MAX /*sqrt(1 - xx*xx)*/),
 	weight(float(rand()) / RAND_MAX)
 {
-	double r = double(rand())/RAND_MAX;
-	double f = 2*M_PI*double(rand())/RAND_MAX;
-	txx = r*cos(f);
-	tyy = r*sin(f);
 	double a = float(rand()) / RAND_MAX + 1;
 	double b = float(rand()) / RAND_MAX + 1;
 	double c = float(rand()) / RAND_MAX * sqrt(a*b);
@@ -177,7 +204,7 @@ EMGaussSqdist::Cluster::Cluster() :
 }
 
 EMGaussSqdist::Cluster::Cluster(double ex_, double ey_, double cxx_, double cyy_,
-																double cxy_, double det_, double txx_, double tyy_,
+																double cxy_, double det_, double txx_, double tt0_, double taa_,
 																double weight_) :
 	ex(ex_),
 	ey(ey_),
@@ -186,14 +213,15 @@ EMGaussSqdist::Cluster::Cluster(double ex_, double ey_, double cxx_, double cyy_
 	cxy(cxy_),
 	det(det_),
 	txx(txx_),
-	tyy(tyy_),
+	tt0(tt0_),
+	taa(taa_),
 	weight(weight_)
 {
 
 }
 
 void EMGaussSqdist::Cluster::print() {
-	std::cout << "(" << ex << ", " << ey << ", " << cxx << ", " << cyy << ", " << cxy << ", " << txx << ", " << tyy << weight << ")";
+	std::cout << "(" << ex << ", " << ey << ", " << cxx << ", " << cyy << ", " << cxy << ", " << txx << ", " << tt0 << ", " << taa << weight << ")";
 }
 
 void EMGaussSqdist::Cluster::save(FILE* file, bool lossy) {
@@ -204,7 +232,8 @@ void EMGaussSqdist::Cluster::save(FILE* file, bool lossy) {
 	fwrite(&cyy, sizeof(double), 1, file);
 	fwrite(&det, sizeof(double), 1, file);
 	fwrite(&txx, sizeof(double), 1, file);
-	fwrite(&tyy, sizeof(double), 1, file);
+	fwrite(&tt0, sizeof(double), 1, file);
+	fwrite(&taa, sizeof(double), 1, file);
 	fwrite(&weight, sizeof(double), 1, file);
 }
 
@@ -216,7 +245,8 @@ void EMGaussSqdist::Cluster::load(FILE* file) {
 	fread(&cyy, sizeof(double), 1, file);
 	fread(&det, sizeof(double), 1, file);
 	fread(&txx, sizeof(double), 1, file);
-	fread(&tyy, sizeof(double), 1, file);
+	fread(&tt0, sizeof(double), 1, file);
+	fread(&taa, sizeof(double), 1, file);
 	fread(&weight, sizeof(double), 1, file);
 }
 
@@ -228,7 +258,8 @@ void EMGaussSqdist::Cluster::importFromArray(double* array, int len, int& pos) {
 	cxy = array[pos++];
 	det = array[pos++];
 	txx = array[pos++];
-	tyy = array[pos++];
+	tt0 = array[pos++];
+	taa = array[pos++];
 	weight = array[pos++];
 }
 
@@ -240,14 +271,16 @@ void EMGaussSqdist::Cluster::exportToArray(double* array, int maxLen, int& pos) 
 	array[pos++] = cxy;
 	array[pos++] = det;
 	array[pos++] = txx;
-	array[pos++] = tyy;
+	array[pos++] = tt0;
+	array[pos++] = taa;
 	array[pos++] = weight;
 }
 
 double EMGaussSqdist::Cluster::density_at(double x, double y, double phase) const {
-	double dtx = txx - cos(phase);
-	double dty = tyy - sin(phase);
-	double sqdist = (1 - txx*txx - tyy*tyy) / ((dtx*dtx + dty*dty) * 2*M_PI);
+	phase -= tt0;
+	double dtx = cos(phase) - txx;
+	double dty = sin(phase) * taa;
+	double sqdist = taa*(1 - txx*txx) / (2 * M_PI * (dtx*dtx + dty*dty));
 	double dx = ex - x;
 	double dy = ey - y;
 	double gauss = exp(-(cxx*dx*dx + cyy*dy*dy + cxy*dx*dy)/2) / det;

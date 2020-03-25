@@ -44,8 +44,8 @@ class EMGaussSqdist
 		class Cluster {
 			public:
 				Cluster();
-				Cluster(double ex_, double ey_, double cxx_, double cyy_, double cxy_, double det_, double txx_, double tyy_, double weight_);
-				double ex, ey, cxx, cyy, cxy, det, txx, tyy;
+				Cluster(double ex_, double ey_, double cxx_, double cyy_, double cxy_, double det_, double txx_, double tt0_, double taa_, double weight_);
+				double ex, ey, cxx, cyy, cxy, det, txx, tt0, taa;
 				double weight;
 
 				void print();
