@@ -1,18 +1,19 @@
-!FreMEn 1 2 3 4 5 
+!FreMEn 1 2 3 4 5
 !HyT-KM 0
 !HyT-EM 1 2 3 4 5
 !Mean	 0
 #None     0
 !Hist 1 4 12 24
-!HyT-CEM-vM 5 10 15 20 25 30
 !HyT-CEM-wC 5 10 15 20 25 30
-!LiT-EM 5 10 15 20 25 30
+!HyT-CEM-vM 5 10 15 20 25 30
+LiT-EM 5 10 15 20 25 30
 
 #GMM 	 1 2 3 4 5
 #VonMises 1 2 3 4 5 
 
-!HyT-MM 5 10
-!Adaboost 1
-Neural 4
+!HyT-MM-vM 2 4 6
+!HyT-MM-wC 1
+!Adaboost 1 2 3 4
+!Neural 4
 
 # The '#' means that model is neither calculated (in process_dataset.sh), nor evaluated (in summarize_results.sh). '!' means that the model is not calculated (because it was calculated in the past), but it's evaluated. 
