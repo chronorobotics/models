@@ -35,7 +35,7 @@ void Adaboost::train() {
 		time_samples[i].weight = 1/double(time_samples.size());
 	}
 
-	for (int i = 0; i < 20; ++i) {
+	for (int i = 0; i < 5; ++i) {
 		adaboost_iteration();
 	}
 

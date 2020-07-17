@@ -7,7 +7,7 @@
 CAdaboost::CAdaboost(int idd) :
 	adaboosts(),
 	means(),
-	class_model(7)
+	class_model(3)
 {
 	id=idd;
 	firstTime = -1;
@@ -94,7 +94,9 @@ void CAdaboost::update(int modelOrder, unsigned int* times, float* signal, int l
 		}
 	}
 	for (int j = 0; j < adaboosts.size(); ++j) {
+		std::cout << "Adaboost " << j << " training" << std::endl;
 		adaboosts[j].train();
+		std::cout << "Adaboost " << j << " trained" << std::endl;
 	}
 
 	ofstream myfile0("0.txt");
