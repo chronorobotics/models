@@ -42,6 +42,13 @@ void DPSqdist::calculate()
 	int tries = 0;
 	srandom(time(0));
 
+	if (count == 1) {
+		xx[0] = ep.right_side[0];
+		yy[0] = ep.right_side[1];
+		weight[0] = 1;
+		return;
+	}
+
 	do {
 		tries++;
 		int iter = 0;
@@ -82,21 +89,46 @@ void DPSqdist::calculate()
 			status = gsl_multiroot_test_residual (s->f, 0.1);
 		}	while (status == GSL_CONTINUE && iter < 1000);
 
-		std::cout << "status = " << gsl_strerror (status) << ", tries = " << tries << std::endl;
+		std::cout << "\33[2K\rstatus = " << gsl_strerror (status) << ", tries = " << tries << std::endl;
 		double sum_w = 0;
+		bool negative_weight = false;
 		for (int i = 0; i < count; ++i) {
 			xx[i]     = gsl_vector_get(s->x, 3*i);
 			yy[i]     = gsl_vector_get(s->x, 3*i + 1);
 			weight[i] = gsl_vector_get(s->x, 3*i + 2);
 			sum_w += weight[i];
+			if (weight[i] < 0) {
+				negative_weight = true;
+			}
 		}
 
-		for (int i = 0; i < count; ++i) {
+		/*for (int i = 0; i < count; ++i) {
 			weight[i] /= sum_w;
+		}*/
+
+		if (status == GSL_SUCCESS) {
+			for (int i = 0; i < n; ++i) {
+				std::cout << (gsl_vector_get(s->f, 0) + ep.right_side[i]) << ", ";
+				if (i % 2) {
+					std::cout << std::endl;
+				}
+			}
+			std::cout << std::endl;
+
+			for (int i = 0; i < n; ++i) {
+				std::cout << ep.right_side[i] << ", ";
+				if (i % 2) {
+					std::cout << std::endl;
+				}
+			}
+			std::cout << std::endl;
 		}
 
 		gsl_multiroot_fsolver_free(s);
 		gsl_vector_free(x);
+		if (sum_w > 1.1 || sum_w < 0.9 || negative_weight) {
+			status = GSL_EDOM;
+		}
 	} while (status != GSL_SUCCESS);
 
 	std::cout << std::endl;
@@ -174,9 +206,9 @@ int DPSqdist::moment_f(const gsl_vector* x, void* params, gsl_vector* f) {
 			y_im += x_weight * x_yy;
 		}
 
-		gsl_vector_set (f, 2*i    , y_re - ep->right_side[2*i]/sum_w);
+		gsl_vector_set (f, 2*i    , y_re - ep->right_side[2*i]);
 		if (2*i + 1 < ep->cluster_count*3) {
-			gsl_vector_set (f, 2*i + 1, y_im - ep->right_side[2*i + 1]/sum_w);
+			gsl_vector_set (f, 2*i + 1, y_im - ep->right_side[2*i + 1]);
 		}
 
 	}
