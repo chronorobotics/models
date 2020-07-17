@@ -9,10 +9,10 @@
 #include <stdint.h>
 #include <memory>
 #include "CTemporal.h"
+#include "CMoments.h"
 
 #include "moments/moment_estimator.h"
 #include "moments/density_params.h"
-#include "CMoments.h"
 
 #define MAX_ID_LENGTH 100
 	

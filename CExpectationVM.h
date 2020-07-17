@@ -10,8 +10,8 @@
 #include <vector>
 #include "CTemporal.h"
 
-#include "em/em_sqdist.h"
-#include "em/em_von_mises.h"
+#include "em/em_gauss_vonmises.h"
+#include "em/em_gauss_sqdist.h"
 
 class CExpectationVM : public CTemporal
 {
@@ -22,11 +22,12 @@ class CExpectationVM : public CTemporal
 		void init(int iMaxPeriod, int elements, int numClasses);
 
 		//adds a serie of measurements to the data
-		int add(uint32_t time,float state);
-
+		int add(uint32_t time, float state);
+		int add_v(double x, double y, uint32_t time);
 
 		//estimates the probability for the given times - using stored histogram
 		float estimate(uint32_t time);
+		float estimate_v(double x, double y, uint32_t time);
 
 		//predicts the probability for the given times - using updated histogram
 		float predict(uint32_t time);
@@ -44,21 +45,8 @@ class CExpectationVM : public CTemporal
 	private:
 		int id;
 
-		class TimeSample {
-			public:
-				TimeSample();
-				TimeSample(long int t_, float v_);
-				long int t;
-				float v;
-		};
-		TimeSample sampleArray[1000000];
-		int numSamples;
-
-		EMVonMises positive;
-		EMVonMises negative;
-
-		int positives;
-		int negatives;
+		int pedestrians;
+		EMGaussVonMises model;
 };
 
 #endif // CExpectationVM_H

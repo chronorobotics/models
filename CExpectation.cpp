@@ -46,6 +46,7 @@ void CExpectation::update(int modelOrder, unsigned int* times, float* signal, in
 {
 	model.train();
 	std::cout << "Trained" << std::endl;
+	print();
 }
 
 /*text representation of the fremen model*/

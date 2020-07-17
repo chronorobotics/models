@@ -10,6 +10,7 @@
 #include <vector>
 #include "CTemporal.h"
 
+#include "em/em_gauss_vonmises.h"
 #include "em/em_gauss_sqdist.h"
 
 class CExpectation : public CTemporal
