@@ -44,7 +44,7 @@ void EMUnwrapped::expectation() {
 }
 
 double EMUnwrapped::maximisation() {
-	double shift;
+	double shift = 0;
 	std::cerr << "Performing maximisation ..." << std::endl;
 
 	for (int i = 0; i < clusters.size(); ++i) {
@@ -84,18 +84,23 @@ double EMUnwrapped::maximisation() {
 }
 
 void EMUnwrapped::train() {
+	double shift = 555;
 	double dl;
 	int i = 5;
 	do {
+		std::cout << "..." << std::endl;
+		for (int i = 0; i < clusters.size(); ++i) {
+			if (clusters[i].sigma < 0.1) clusters[i].sigma = 0.1;
+		}
 		double l = get_loglikelihood();
 		expectation();
-		maximisation();
+		shift = maximisation();
 		dl = get_loglikelihood() - l;
 		std::cout << "dl = " << dl << std::endl;
 		if (dl < 1) {
 			--i;
 		}
-	} while (i);
+	} while (!isnan(shift) && i);
 }
 
 void EMUnwrapped::add_time(uint32_t time, double value) {
