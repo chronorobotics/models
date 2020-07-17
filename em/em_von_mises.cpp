@@ -1,10 +1,13 @@
 #include <iostream>
 #include <sstream>
+#include <fstream>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_roots.h>
 #include <gsl/gsl_sf_bessel.h>
 #include "em_von_mises.h"
+
+int ajdyy = 0;
 
 EMVonMises::EMVonMises() :
 	EMCircular(),
@@ -23,7 +26,7 @@ EMVonMises::EMVonMises(int cluster_count_) :
 	for (int i = 0; i < cluster_count; ++i) {
 		clusters.push_back(Cluster());
 		s += clusters[i].weight;
-		clusters[i].kappa = 374 + 146*float(rand())/RAND_MAX;
+		clusters[i].kappa = 30 + 10*float(rand())/RAND_MAX;
 		clusters[i].mu = float(rand())/RAND_MAX * 2 * M_PI;
 	}
 
@@ -93,11 +96,25 @@ void EMVonMises::train() {
 		dl = get_loglikelihood() - l;
 		std::cout << "dl = " << dl << std::endl;
 	} while (isnan(shift) || dl > 1.0);
+
+	/*std::ofstream myfile0(std::to_string(ajdyy)+"_0.txt");
+	for (int i = 0; i < timestamps.size(); ++i) {
+		myfile0 << timestamps[i].phase <<" 1"<< std::endl;
+	}
+	myfile0.close();
+	std::ofstream myfile1(std::to_string(ajdyy)+"_1.txt");
+	for (double phi = -M_PI; phi < M_PI; phi += 0.01) {
+		myfile1 << phi <<" "<< get_density_at_d(phi) << std::endl;
+	}
+	myfile1.close();*/
+	ajdyy++;
 }
 
 void EMVonMises::add_time(uint32_t time, double value) {
-	timestamps.push_back(Timestamp(time, cluster_count, value));
-	timestamps_weight += value;
+	if (double(rand())/RAND_MAX < value) {
+		timestamps.push_back(Timestamp(time, cluster_count, value));
+		timestamps_weight += value;
+	}
 }
 
 EMVonMises::Cluster::Cluster() :
