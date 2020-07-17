@@ -92,7 +92,6 @@ int CTimeMean::save(FILE* file,bool lossy)
 	double array[10000];
 	int len = exportToArray(array,10000);
 	fwrite(array,sizeof(double),len,file);
-	fclose(file);
 	return 0;
 }
 
