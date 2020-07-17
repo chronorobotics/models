@@ -45,7 +45,7 @@ class CMoments: public CTemporal
 
 		int get_cluster_count() const;
 
-	private:
+	protected:
 		int id;
 		float estimation;
 		int cluster_count;
@@ -65,6 +65,8 @@ class CMoments: public CTemporal
 
 		TimeSample sampleArray[1000000];
 		int numSamples;
+		int positives;
+		int negatives;
 		//double time_to_phase(uint32_t time);
 };
 

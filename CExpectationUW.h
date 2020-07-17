@@ -1,5 +1,5 @@
-#ifndef CEXPECTATION_H
-#define CEXPECTATION_H
+#ifndef CExpectationUW_H
+#define CExpectationUW_H
 
 #include <stdio.h>
 #include <iostream>
@@ -10,14 +10,13 @@
 #include <vector>
 #include "CTemporal.h"
 
-#include "em/em_sqdist.h"
-#include "em/em_von_mises.h"
+#include "em/em_unwrapped.h"
 
-class CExpectation : public CTemporal
+class CExpectationUW : public CTemporal
 {
 	public:
-		CExpectation(int idd);
-		~CExpectation();
+		CExpectationUW(int idd);
+		~CExpectationUW();
 
 		void init(int iMaxPeriod, int elements, int numClasses);
 
@@ -54,11 +53,11 @@ class CExpectation : public CTemporal
 		TimeSample sampleArray[1000000];
 		int numSamples;
 
-		EMSqdist positive;
-		EMSqdist negative;
+		EMUnwrapped positive;
+		EMUnwrapped negative;
 
 		int positives;
 		int negatives;
 };
 
-#endif // CEXPECTATION_H
+#endif // CExpectationUW_H

@@ -17,11 +17,13 @@ CMoments::CMoments(int idd) :
 
 	numSamples = 0;
 
-  pos_density = DensityParams::create(this, DensityParams::SQDIST);
-  neg_density = DensityParams::create(this, DensityParams::SQDIST);
+	pos_density = DensityParams::create(this, DensityParams::SQDIST);
+	neg_density = DensityParams::create(this, DensityParams::SQDIST);
 
 	pos_estimator = pos_density->get_moment_estimator();
 	neg_estimator = neg_density->get_moment_estimator();
+	positives = 0;
+	negatives = 0;
 }
 
 void CMoments::init(int iMaxPeriod,int elements,int numClasses)
@@ -61,16 +63,18 @@ int CMoments::get_cluster_count() const {
 // adds new state observations at given times
 int CMoments::add(uint32_t time,float state)
 {
-  if (rand() % 100) {
+	/*if (rand() % 100) {
     return 0;
-  }
+	}*/
 	sampleArray[numSamples] = TimeSample(time, state);
 	numSamples++;
 
 	if (state > 0.5) {
 		pos_estimator->add_point(time, 1);
+		positives++;
 	} else {
 		neg_estimator->add_point(time, 1);
+		negatives++;
 	}
 	measurements++;
 	return 0;
@@ -84,11 +88,12 @@ void CMoments::update(int modelOrder, unsigned int* times, float* signal, int le
 	ofstream myfile0("0.txt");
 	ofstream myfile1("1.txt");
 	for (int i = 0; i < numSamples; ++i) {
-		myfile0 << sampleArray[i].t << " " << sampleArray[i].v << std::endl;
-		myfile1 << sampleArray[i].t << " " << estimate(sampleArray[i].t) << std::endl;
+		myfile0 << sampleArray[i].t <<" "<< sampleArray[i].v << std::endl;
+		myfile1 << sampleArray[i].t <<" "<< pos_density->density_at(sampleArray[i].t) << std::endl;
 	}
 	myfile0.close();
 	myfile1.close();
+	print();
 }
 
 /*text representation of the fremen model*/
@@ -96,9 +101,9 @@ void CMoments::print(bool verbose)
 {
 	std::cout << "Model " << id << " Size: " << measurements << " " << std::endl;
 	if (verbose) {
-		std::cout << "positive: ";
+		std::cout << positives << " positive: ";
 		pos_density->print();
-		std::cout << std::endl << "negative: ";
+		std::cout << std::endl << negatives << " negative: ";
 		neg_density->print();
 		std::cout << std::endl;
 	}
@@ -106,11 +111,11 @@ void CMoments::print(bool verbose)
 
 float CMoments::estimate(uint32_t time)
 {
-	float pd = pos_density->density_at(time);
-	//float nd = neg_density->density_at(time);
+	float pd = pos_density->density_at(time) * positives;
+	float nd = neg_density->density_at(time) * negatives;
 
-	//return pd / (pd + nd);
-	return pd;
+	return pd / (pd + nd);
+	//return pd;
 }
 
 float CMoments::predict(uint32_t time)
@@ -137,6 +142,8 @@ int CMoments::load(const char* name)
 
 int CMoments::save(FILE* file,bool lossy)
 {
+	fwrite(&positives, sizeof(int), 1, file);
+	fwrite(&negatives, sizeof(int), 1, file);
 	pos_density->save(file, lossy);
 	neg_density->save(file, lossy);
 	return 0;
@@ -144,6 +151,8 @@ int CMoments::save(FILE* file,bool lossy)
 
 int CMoments::load(FILE* file)
 {
+	fread(&positives, sizeof(int), 1, file);
+	fread(&negatives, sizeof(int), 1, file);
 	pos_density = DensityParams::load(this, file);
 	neg_density = DensityParams::load(this, file);
 	return 0;

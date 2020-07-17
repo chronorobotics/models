@@ -11,6 +11,9 @@
 #include "CMoments.h"
 #include "CAdaboost.h"
 #include "CNeural.h"
+#include "CExpectationVM.h"
+#include "CMomentsVM.h"
+#include "CExpectationUW.h"
 
 const char *temporalModelName[] = 
 {
@@ -23,10 +26,13 @@ const char *temporalModelName[] =
 	"Gaussian",
 	"Adaptive",
 	"VonMises",
-	"HyT-CEM",
-	"HyT-MM",
+	"HyT-CEM-wC",
+	"HyT-MM-wC",
 	"Adaboost",
 	"Neural",
+	"HyT-CEM-vM",
+	"HyT-MM-vM",
+	"LiT-EM",
 	"Number",
 };
 
@@ -50,6 +56,9 @@ CTemporal* spawnTemporalModel(ETemporalType type,int maxPeriod,int elements,int 
 		case TT_MOMENTS:	temporalModel = new CMoments(elements);	break;
 		case TT_ADABOOST:	temporalModel = new CAdaboost(elements); break;
 		case TT_NEURAL:	temporalModel = new CNeural(elements); break;
+		case TT_EXPECTATION_VM:	temporalModel = new CExpectationVM(elements); break;
+		case TT_MOMENTS_VM:	temporalModel = new CMomentsVM(elements);	break;
+		case TT_EXPECTATION_UW:	temporalModel = new CExpectationUW(elements); break;
 		default: 		temporalModel = new CTimeNone(0);
 	}
 	temporalModel->init(maxPeriod,elements,numClasses);
