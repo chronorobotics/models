@@ -1,15 +1,15 @@
-#ifndef EM_GAUSS_SQDIST_H
-#define EM_GAUSS_SQDIST_H
+#ifndef EM_GAUSS_VONMISES_H
+#define EM_GAUSS_VONMISES_H
 
 #include <stdio.h>
 #include <vector>
 #include <stdint.h>
 
-class EMGaussSqdist
+class EMGaussVonMises
 {
 	public:
-		EMGaussSqdist();
-		EMGaussSqdist(int cluster_count_);
+		EMGaussVonMises();
+		EMGaussVonMises(int cluster_count_);
 
 		void train();
 		void add_value(double x, double y, uint32_t time, double weight);
@@ -44,8 +44,8 @@ class EMGaussSqdist
 		class Cluster {
 			public:
 				Cluster();
-				Cluster(double ex_, double ey_, double cxx_, double cyy_, double cxy_, double det_, double txx_, double tyy_, double weight_);
-				double ex, ey, cxx, cyy, cxy, det, txx, tyy;
+				Cluster(double ex_, double ey_, double cxx_, double cyy_, double cxy_, double det_, double tmu_, double tkappa_, double weight_);
+				double ex, ey, cxx, cyy, cxy, det, tmu, tkappa;
 				double weight;
 
 				void print();
@@ -55,13 +55,15 @@ class EMGaussSqdist
 				void importFromArray(double* array, int len, int& pos);
 
 				double density_at(double x, double y, double phase) const;
+				void estimate_from_mean(double re, double im, bool keep_kappa);
+
+				static double mean_f (double x, void* params);
+				static double mean_df (double x, void* params);
+				static void mean_fdf (double x, void* params, double* y, double* dy);
 		};
 
 		std::vector<Cluster> clusters;
 		std::vector<Point> points;
-
-		void U(double zr, double zi, double fr, double fi, double w, double& vr, double& vi);
-		void mle(int c, double s, double& xhat, double& yhat);
 };
 
-#endif // EM_GAUSS_SQDIST_H
+#endif // EM_GAUSS_VONMISES_H

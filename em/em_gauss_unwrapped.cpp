@@ -1,10 +1,14 @@
 #include <math.h>
 #include <iostream>
 #include <sstream>
+#include <gsl/gsl_errno.h>
+#include <gsl/gsl_math.h>
+#include <gsl/gsl_roots.h>
+#include <gsl/gsl_sf_bessel.h>
 
-#include "em_gauss_sqdist.h"
+#include "em_gauss_unwrapped.h"
 
-EMGaussSqdist::EMGaussSqdist() :
+EMGaussUnwrapped::EMGaussUnwrapped() :
 	cluster_count(),
 	total_weight(0),
 	clusters(),
@@ -13,7 +17,7 @@ EMGaussSqdist::EMGaussSqdist() :
 
 }
 
-EMGaussSqdist::EMGaussSqdist(int cluster_count_) :
+EMGaussUnwrapped::EMGaussUnwrapped(int cluster_count_) :
 	cluster_count(cluster_count_),
 	total_weight(0),
 	clusters(),
@@ -30,7 +34,7 @@ EMGaussSqdist::EMGaussSqdist(int cluster_count_) :
 	}
 }
 
-double EMGaussSqdist::time_to_phase(uint32_t time) {
+double EMGaussUnwrapped::time_to_phase(uint32_t time) {
 	float phase = fmodf(time, 86400.0f) / 86400;
 	if (phase > 0.5) {
 		phase -= 1;
@@ -38,7 +42,7 @@ double EMGaussSqdist::time_to_phase(uint32_t time) {
 	return phase * M_PI * 2;
 }
 
-void EMGaussSqdist::expectation() {
+void EMGaussUnwrapped::expectation() {
 	std::cerr << "Performing expectation ..." << std::endl;
 
 	for (int i = 0; i < points.size(); ++i) {
@@ -55,7 +59,7 @@ void EMGaussSqdist::expectation() {
 	}
 }
 
-double EMGaussSqdist::maximisation() {
+double EMGaussUnwrapped::maximisation() {
 	double shift = 0;
 	std::cerr << "Performing maximisation ..." << std::endl;
 	for (int i = 0; i < clusters.size(); ++i) {
@@ -64,8 +68,8 @@ double EMGaussSqdist::maximisation() {
 		double last_cxx = clusters[i].cxx;
 		double last_cyy = clusters[i].cyy;
 		double last_cxy = clusters[i].cxy;
-		double last_txx = clusters[i].txx;
-		double last_tyy = clusters[i].tyy;
+		double last_tmu = clusters[i].tmu;
+		double last_tsigma = clusters[i].tsigma;
 		double last_weight = clusters[i].weight;
 
 		double s = 0;
@@ -85,12 +89,22 @@ double EMGaussSqdist::maximisation() {
 		clusters[i].ex = mean_x;
 		clusters[i].ey = mean_y;
 
-		mle(i, s, clusters[i].txx, clusters[i].tyy);
-		double norm = sqrt(clusters[i].txx*clusters[i].txx + clusters[i].tyy*clusters[i].tyy);
-		if (norm > 0.999) {
-			clusters[i].txx *= 0.999/norm;
-			clusters[i].tyy *= 0.999/norm;
+		double mean = 0;
+		for (int j = 0; j < points.size(); ++j) {
+			mean += points[j].phase * points[j].alpha[i];
 		}
+		mean /= s;
+
+		double deviation = 0;
+		for (int j = 0; j < points.size(); ++j) {
+			double foo = points[j].phase - mean;
+			deviation += foo*foo * points[j].alpha[i];
+		}
+		deviation /= s;
+
+		clusters[i].tmu = mean;
+		clusters[i].tsigma = sqrt(deviation);
+		if (clusters[i].tsigma < 0.1) clusters[i].tsigma = 0.1;
 
 		double deviation_x = 0;
 		double deviation_y = 0;
@@ -124,45 +138,41 @@ double EMGaussSqdist::maximisation() {
 		double delta_cxx = last_cxx - clusters[i].cxx;
 		double delta_cyy = last_cyy - clusters[i].cyy;
 		double delta_cxy = last_cxy - clusters[i].cxy;
-		double delta_txx = last_txx - clusters[i].txx;
-		double delta_tyy = last_tyy - clusters[i].tyy;
+		double delta_tmu = last_tmu - clusters[i].tmu;
+		double delta_tsigma = last_tsigma - clusters[i].tsigma;
 		double delta_weight = last_weight - clusters[i].weight;
 		shift += delta_ex*delta_ex + delta_ey*delta_ey + delta_cxx*delta_cxx + delta_cyy*delta_cyy +
-						 delta_cxy*delta_cxy + delta_txx*delta_txx + delta_tyy*delta_tyy +
+						 delta_cxy*delta_cxy + delta_tmu*delta_tmu + delta_tsigma*delta_tsigma +
 						 delta_weight*delta_weight;
 	}
 	return sqrt(shift);
 }
 
-void EMGaussSqdist::train() {
+void EMGaussUnwrapped::train() {
 	double shift = 555;
 	do {
 		expectation();
 		shift = maximisation();
 		std::cerr << "shift = " << shift << std::endl;
-	} while (shift > 1E-3);
+	} while (shift > 1E-3 && shift < 1E8);
 }
 
-void EMGaussSqdist::add_value(double x, double y, uint32_t time, double weight) {
+void EMGaussUnwrapped::add_value(double x, double y, uint32_t time, double weight) {
 	points.push_back(Point(x, y, time, cluster_count, weight));
 	total_weight += weight;
 }
 
-EMGaussSqdist::Cluster::Cluster() :
+EMGaussUnwrapped::Cluster::Cluster() :
 	ex(2*float(rand()) / RAND_MAX - 1),
 	ey(2*float(rand()) / RAND_MAX - 1),
 	cxx(),
 	cyy(),
 	cxy(),
 	det(),
-	txx(),
-	tyy(),
+	tmu(2*M_PI*float(rand()) / RAND_MAX - M_PI),
+	tsigma(float(rand()) / RAND_MAX),
 	weight(float(rand()) / RAND_MAX)
 {
-	double r = double(rand())/RAND_MAX*0.999;
-	double phi = double(rand())/RAND_MAX*2*M_PI;
-	txx = r*cos(phi);
-	tyy = r*sin(phi);
 	double a = float(rand()) / RAND_MAX + 1;
 	double b = float(rand()) / RAND_MAX + 1;
 	double c = float(rand()) / RAND_MAX * sqrt(a*b);
@@ -173,8 +183,8 @@ EMGaussSqdist::Cluster::Cluster() :
 	det = sqrt(4*M_PI*M_PI*det);
 }
 
-EMGaussSqdist::Cluster::Cluster(double ex_, double ey_, double cxx_, double cyy_,
-																double cxy_, double det_, double txx_, double tyy_,
+EMGaussUnwrapped::Cluster::Cluster(double ex_, double ey_, double cxx_, double cyy_,
+																double cxy_, double det_, double tmu_, double tsigma_,
 																double weight_) :
 	ex(ex_),
 	ey(ey_),
@@ -182,80 +192,79 @@ EMGaussSqdist::Cluster::Cluster(double ex_, double ey_, double cxx_, double cyy_
 	cyy(cyy_),
 	cxy(cxy_),
 	det(det_),
-	txx(txx_),
-	tyy(tyy_),
+	tmu(tmu_),
+	tsigma(tsigma_),
 	weight(weight_)
 {
 
 }
 
-void EMGaussSqdist::Cluster::print() {
+void EMGaussUnwrapped::Cluster::print() {
 	double det_ = det*det/4/M_PI/M_PI;
 	double DX = cyy*det_;
 	double DY = cxx*det_;
 	double XY = -cxy*det_/2;
-	std::cout << "(" << ex << ", " << ey << ", " << DX << ", " << DY << ", " << XY << ", " << txx << ", " << tyy << ", " << weight << ")";
+	std::cout << "(" << ex << ", " << ey << ", " << DX << ", " << DY << ", " << XY << ", " << tmu << ", " << tsigma << ", " << weight << ")";
 }
 
-void EMGaussSqdist::Cluster::save(FILE* file, bool lossy) {
+void EMGaussUnwrapped::Cluster::save(FILE* file, bool lossy) {
 	fwrite(&ex, sizeof(double), 1, file);
 	fwrite(&ey, sizeof(double), 1, file);
 	fwrite(&cxx, sizeof(double), 1, file);
 	fwrite(&cxy, sizeof(double), 1, file);
 	fwrite(&cyy, sizeof(double), 1, file);
 	fwrite(&det, sizeof(double), 1, file);
-	fwrite(&txx, sizeof(double), 1, file);
-	fwrite(&tyy, sizeof(double), 1, file);
+	fwrite(&tmu, sizeof(double), 1, file);
+	fwrite(&tsigma, sizeof(double), 1, file);
 	fwrite(&weight, sizeof(double), 1, file);
 }
 
-void EMGaussSqdist::Cluster::load(FILE* file) {
+void EMGaussUnwrapped::Cluster::load(FILE* file) {
 	fread(&ex, sizeof(double), 1, file);
 	fread(&ey, sizeof(double), 1, file);
 	fread(&cxx, sizeof(double), 1, file);
 	fread(&cxy, sizeof(double), 1, file);
 	fread(&cyy, sizeof(double), 1, file);
 	fread(&det, sizeof(double), 1, file);
-	fread(&txx, sizeof(double), 1, file);
-	fread(&tyy, sizeof(double), 1, file);
+	fread(&tmu, sizeof(double), 1, file);
+	fread(&tsigma, sizeof(double), 1, file);
 	fread(&weight, sizeof(double), 1, file);
 }
 
-void EMGaussSqdist::Cluster::importFromArray(double* array, int len, int& pos) {
+void EMGaussUnwrapped::Cluster::importFromArray(double* array, int len, int& pos) {
 	ex = array[pos++];
 	ey = array[pos++];
 	cxx = array[pos++];
 	cyy = array[pos++];
 	cxy = array[pos++];
 	det = array[pos++];
-	txx = array[pos++];
-	tyy = array[pos++];
+	tmu = array[pos++];
+	tsigma = array[pos++];
 	weight = array[pos++];
 }
 
-void EMGaussSqdist::Cluster::exportToArray(double* array, int maxLen, int& pos) {
+void EMGaussUnwrapped::Cluster::exportToArray(double* array, int maxLen, int& pos) {
 	array[pos++] = ex;
 	array[pos++] = ey;
 	array[pos++] = cxx;
 	array[pos++] = cyy;
 	array[pos++] = cxy;
 	array[pos++] = det;
-	array[pos++] = txx;
-	array[pos++] = tyy;
+	array[pos++] = tmu;
+	array[pos++] = tsigma;
 	array[pos++] = weight;
 }
 
-double EMGaussSqdist::Cluster::density_at(double x, double y, double phase) const {
-	double dtx = cos(phase) - txx;
-	double dty = sin(phase) - tyy;
-	double sqdist = (1 - txx*txx - tyy*tyy) / ((dtx*dtx + dty*dty) * 2*M_PI);
+double EMGaussUnwrapped::Cluster::density_at(double x, double y, double phase) const {
+	double t = phase - tmu;
+	double unwrapped = exp(-t*t / (2*tsigma*tsigma)) / (tsigma * sqrt(2*M_PI));
 	double dx = ex - x;
 	double dy = ey - y;
 	double gauss = exp(-(cxx*dx*dx + cyy*dy*dy + cxy*dx*dy)/2) / det;
-	return sqdist * gauss;
+	return unwrapped * gauss;
 }
 
-void EMGaussSqdist::save(FILE* file, bool lossy)
+void EMGaussUnwrapped::save(FILE* file, bool lossy)
 {
 	int size = clusters.size();
 	fwrite(&size, sizeof(int), 1, file);
@@ -264,7 +273,7 @@ void EMGaussSqdist::save(FILE* file, bool lossy)
 	}
 }
 
-void EMGaussSqdist::load(FILE* file)
+void EMGaussUnwrapped::load(FILE* file)
 {
 	int size;
 	fread(&size, sizeof(int), 1, file);
@@ -274,7 +283,7 @@ void EMGaussSqdist::load(FILE* file)
 	}
 }
 
-void EMGaussSqdist::exportToArray(double* array, int maxLen, int& pos)
+void EMGaussUnwrapped::exportToArray(double* array, int maxLen, int& pos)
 {
 	array[pos++] = clusters.size();
 	for (int i = 0; i < clusters.size(); ++i) {
@@ -282,7 +291,7 @@ void EMGaussSqdist::exportToArray(double* array, int maxLen, int& pos)
 	}
 }
 
-void EMGaussSqdist::importFromArray(double* array, int len, int& pos)
+void EMGaussUnwrapped::importFromArray(double* array, int len, int& pos)
 {
 	int size = array[pos++];
 	clusters.resize(size);
@@ -291,7 +300,7 @@ void EMGaussSqdist::importFromArray(double* array, int len, int& pos)
 	}
 }
 
-void EMGaussSqdist::print() {
+void EMGaussUnwrapped::print() {
 	std::cout << "[";
 	double sum_w = 0;
 	for (int i = 0; i < clusters.size(); ++i) {
@@ -304,7 +313,7 @@ void EMGaussSqdist::print() {
 	std::cout << "] (w = " << sum_w << ")" << std::endl;
 }
 
-double EMGaussSqdist::get_density_at(double x, double y, uint32_t time) const {
+double EMGaussUnwrapped::get_density_at(double x, double y, uint32_t time) const {
 	double phase = time_to_phase(time);
 	double result = 0;
 	for (int i = 0; i < clusters.size(); ++i) {
@@ -313,7 +322,7 @@ double EMGaussSqdist::get_density_at(double x, double y, uint32_t time) const {
 	return result;
 }
 
-EMGaussSqdist::Point::Point(double x_, double y_, uint32_t time, int cluster_count, double weight_) :
+EMGaussUnwrapped::Point::Point(double x_, double y_, uint32_t time, int cluster_count, double weight_) :
 	x(x_),
 	y(y_),
 	phase(time_to_phase(time)),
@@ -331,38 +340,5 @@ EMGaussSqdist::Point::Point(double x_, double y_, uint32_t time, int cluster_cou
 
 	for (int i = cluster_count - 1; i >= 0; --i) {
 		alpha[i] /= s;
-	}
-}
-
-void EMGaussSqdist::U(double zr, double zi, double fr, double fi, double w, double& vr, double& vi) {
-	double a = zr - fr;
-	double b = zi - fi;
-	double c = 1 - zr*fr - zi*fi;
-	double d = zr*fi - zi*fr;
-	double e = w/(c*c + d*d);
-	vr += e*(a*c + b*d);
-	vi += e*(b*c - a*d);
-}
-
-void EMGaussSqdist::mle(int c, double s, double& xhat, double& yhat) {
-	xhat = 0;
-	yhat = 0;
-	int i = 0;
-	while (true) {
-		double vr = 0, vi = 0;
-		double xhat_ = 0, yhat_ = 0;
-		for (unsigned int j = 0; j < points.size(); ++j) {
-			U(cos(points[j].phase), sin(points[j].phase), xhat, yhat, points[j].alpha[c], vr, vi);
-		}
-		U(vr/s, vi/s, -xhat, -yhat, 1, xhat_, yhat_);
-		double dx = xhat - xhat_;
-		double dy = yhat - yhat_;
-		xhat = xhat_;
-		yhat = yhat_;
-		double d = sqrt(dx*dx + dy*dy);
-		if (d < 1e-7) {
-			return;
-		}
-		++i;
 	}
 }

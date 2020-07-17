@@ -1,15 +1,15 @@
-#ifndef EM_GAUSS_SQDIST_H
-#define EM_GAUSS_SQDIST_H
+#ifndef EM_GAUSS_UNWRAPPED_H
+#define EM_GAUSS_UNWRAPPED_H
 
 #include <stdio.h>
 #include <vector>
 #include <stdint.h>
 
-class EMGaussSqdist
+class EMGaussUnwrapped
 {
 	public:
-		EMGaussSqdist();
-		EMGaussSqdist(int cluster_count_);
+		EMGaussUnwrapped();
+		EMGaussUnwrapped(int cluster_count_);
 
 		void train();
 		void add_value(double x, double y, uint32_t time, double weight);
@@ -44,8 +44,8 @@ class EMGaussSqdist
 		class Cluster {
 			public:
 				Cluster();
-				Cluster(double ex_, double ey_, double cxx_, double cyy_, double cxy_, double det_, double txx_, double tyy_, double weight_);
-				double ex, ey, cxx, cyy, cxy, det, txx, tyy;
+				Cluster(double ex_, double ey_, double cxx_, double cyy_, double cxy_, double det_, double tmu_, double tsigma_, double weight_);
+				double ex, ey, cxx, cyy, cxy, det, tmu, tsigma;
 				double weight;
 
 				void print();
@@ -59,9 +59,6 @@ class EMGaussSqdist
 
 		std::vector<Cluster> clusters;
 		std::vector<Point> points;
-
-		void U(double zr, double zi, double fr, double fi, double w, double& vr, double& vi);
-		void mle(int c, double s, double& xhat, double& yhat);
 };
 
-#endif // EM_GAUSS_SQDIST_H
+#endif // EM_GAUSS_UNWRAPPED_H

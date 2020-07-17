@@ -16,7 +16,7 @@ EMCircular::EMCircular(int cluster_count_) :
 }
 
 double EMCircular::time_to_phase(uint32_t time) {
-	float phase = fmodf(time, 604800.0f) / 604800;
+	float phase = fmodf(time, 86400.0f) / 86400;
 	if (phase > 0.5) {
 		phase -= 1;
 	}
