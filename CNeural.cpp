@@ -93,7 +93,7 @@ void CNeural::update(int modelOrder, unsigned int* times, float* signal, int len
 	int small = 0;
 	bool smallstep = false;
 	ofstream myfileerr("err.txt");
-	for (int i = 0; i < 1000000; ++i) {
+	for (int i = 0; i < 10000; ++i) {
 		std::cout << "iteration " << i << std::endl;
 		int batch_size = 100;
 		std::vector<double> x;
@@ -150,7 +150,7 @@ float CNeural::estimate(uint32_t time)
 	std::vector<double> x;
 	x.push_back(time);
 	std::vector<double> y = my_model.forward(x);
-	return std::max(y[0], 0.0);
+	return y[0]; //std::max(y[0], 0.0);
 }
 
 float CNeural::predict(uint32_t time)
