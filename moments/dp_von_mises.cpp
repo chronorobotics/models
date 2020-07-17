@@ -84,14 +84,20 @@ void DPVonMises::calculate()
 		}	while (status == GSL_CONTINUE && iter < 1000);
 
 		std::cout << "\33[2K\rstatus = " << gsl_strerror (status) << ", tries = " << tries << std::flush;
+		double sum_w = 0;
 		for (int i = 0; i < count; ++i) {
 			kappa[i]  = lnhyp(gsl_vector_get(s->x, 3*i), ep.min_kappa);
 			mu[i]     = gsl_vector_get(s->x, 3*i + 1);
 			weight[i] = hyp(gsl_vector_get(s->x, 3*i + 2));
+			sum_w += weight[i];
 		}
 
 		gsl_multiroot_fsolver_free(s);
 		gsl_vector_free(x);
+
+		if (sum_w < 0.9 || sum_w > 1.1) {
+			status = GSL_EDOM;
+		}
 	} while (status != GSL_SUCCESS /*&& tries < 100*/);
 
 	std::cout << std::endl;
