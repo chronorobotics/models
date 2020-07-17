@@ -89,7 +89,7 @@ void EMVonMises::train() {
 	do {
 		double l = get_loglikelihood();
 		expectation();
-		shift = maximisation(shift > 0.001);
+		shift = maximisation(false);
 		dl = get_loglikelihood() - l;
 		std::cout << "dl = " << dl << std::endl;
 	} while (isnan(shift) || dl > 1.0);
@@ -168,27 +168,32 @@ void EMVonMises::Cluster::estimate_from_mean(double re, double im, bool keep_kap
 	double x0;
 	double x = 5.0;
 
-	const gsl_root_fdfsolver_type* T = gsl_root_fdfsolver_newton;
-	gsl_root_fdfsolver* s = gsl_root_fdfsolver_alloc(T);
+	if (mean_f(300, &aa) < 0) {
+		kappa = 300;
+		return;
+	}
 
-	gsl_function_fdf FDF;
-	FDF.f = &mean_f;
-	FDF.df = &mean_df;
-	FDF.fdf = &mean_fdf;
+	const gsl_root_fsolver_type* T = gsl_root_fsolver_bisection;
+	gsl_root_fsolver* s = gsl_root_fsolver_alloc(T);
+
+	gsl_function FDF;
+	FDF.function = &mean_f;
+	//FDF.df = &mean_df;
+	//FDF.fdf = &mean_fdf;
 	FDF.params = &aa;
 
-	gsl_root_fdfsolver_set (s, &FDF, x);
+	gsl_root_fsolver_set (s, &FDF, 0, 300);
 
 	do {
 		iter++;
-		status = gsl_root_fdfsolver_iterate (s);
+		status = gsl_root_fsolver_iterate (s);
 		x0 = x;
-		x = gsl_root_fdfsolver_root (s);
+		x = gsl_root_fsolver_root (s);
 		status = gsl_root_test_delta (x, x0, 0, 1e-30);
 
 	} while (status == GSL_CONTINUE && iter < max_iter);
 
-	gsl_root_fdfsolver_free (s);
+	gsl_root_fsolver_free (s);
 	kappa = x;
 }
 
