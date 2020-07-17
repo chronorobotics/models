@@ -32,10 +32,10 @@ std::vector<double> LiftingLayer::forward(const std::vector<double>& x, int batc
 			result.push_back(sin(phase));
 			result.push_back(1);
 		}
-		/*double x_ = (x[b] - offset)*scale;
+		double x_ = (x[b] - offset)*scale;
 		result.push_back(x_);
 		result.push_back(x_*x_);
-		result.push_back(1);*/
+		result.push_back(1);
 	}
 	last_x = x;
 	bs = batch_size;
@@ -43,7 +43,7 @@ std::vector<double> LiftingLayer::forward(const std::vector<double>& x, int batc
 }
 
 std::vector<double> LiftingLayer::backward(const std::vector<double>& dL_wrt_output) {
-	assert(dL_wrt_output.size() == 3*bs*(/*1+*/periods.size()));
+	assert(dL_wrt_output.size() == 3*bs*(1+periods.size()));
 	std::vector<double> result;
 	result.resize(bs, 0);
 	int ps1 = periods.size()+1;
@@ -55,8 +55,8 @@ std::vector<double> LiftingLayer::backward(const std::vector<double>& dL_wrt_out
 			foo += dL_wrt_output[3*b*ps1 + 3*p] * (-2*M_PI/periods[p]*sin(phase));
 			foo += dL_wrt_output[3*b*ps1 + 3*p + 1] * (2*M_PI/periods[p]*cos(phase));
 		}
-		/*foo += dL_wrt_output[3*b*ps1 + 3*ps] * scale;
-		foo += dL_wrt_output[3*b*ps1 + 3*ps + 1] * 2*scale*scale*(last_x[b] - offset);*/
+		foo += dL_wrt_output[3*b*ps1 + 3*ps] * scale;
+		foo += dL_wrt_output[3*b*ps1 + 3*ps + 1] * 2*scale*scale*(last_x[b] - offset);
 		result[b] = foo;
 	}
 	return result;

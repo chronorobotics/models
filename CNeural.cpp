@@ -77,7 +77,7 @@ void CNeural::update(int modelOrder, unsigned int* times, float* signal, int len
 	for (int i = 0; i < id; ++i) {
 		periods.push_back(fremen.getPredictFrelements()[i].period);
 	}
-	int id1 = id;
+	int id1 = id+1;
 	int id2 = id1*id1;
 	my_model.add_layer(std::shared_ptr<NeuronLayer>(new LiftingLayer(periods, min_time, max_time)));
 	my_model.add_layer(std::shared_ptr<NeuronLayer>(new LogregLayer(id1, 7)));
@@ -90,10 +90,8 @@ void CNeural::update(int modelOrder, unsigned int* times, float* signal, int len
 	//my_model.add_layer(std::shared_ptr<NeuronLayer>(new LinearLayer(7*id1, 1)));
 
 	double err;
-	int small = 0;
-	bool smallstep = false;
 	ofstream myfileerr("err.txt");
-	for (int i = 0; i < 10000; ++i) {
+	for (int i = 0; i < 1000; ++i) {
 		std::cout << "iteration " << i << std::endl;
 		int batch_size = 100;
 		std::vector<double> x;
@@ -106,17 +104,9 @@ void CNeural::update(int modelOrder, unsigned int* times, float* signal, int len
 			y.push_back(sampleArray[r].v);
 		}
 		err = my_model.forward(x, y);
-		if (err < 0.12) {
-			small++;
-			if (small > 30) {
-				smallstep = true;
-			}
-		} else {
-			small = 0;
-		}
 		myfileerr << err << std::endl;
 		my_model.backward();
-		my_model.step(smallstep ? 1E-3 : 1E-2);
+		my_model.step(1E-3);
 		/*if (i == 50000) {
 			my_model.simplify();
 		}*/
