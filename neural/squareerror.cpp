@@ -38,3 +38,7 @@ std::vector<double> SquareError::backward() {
 	}
 	return result;
 }
+
+void SquareError::set_size(int new_size) {
+	size = new_size;
+}

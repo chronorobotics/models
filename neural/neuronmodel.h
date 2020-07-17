@@ -17,9 +17,13 @@ class NeuronModel
 		double forward(const std::vector<double>& x_, const std::vector<double>& y);
 		void backward();
 		void step(float rate);
+		void backward1();
+		void step1(float rate);
 		void simplify();
 
 		void add_layer(std::shared_ptr<NeuronLayer> layer);
+		void pop_layer();
+		void set_output_size(int new_size);
 
 		void save(FILE* file, bool lossy = false);
 		void load(FILE* file);

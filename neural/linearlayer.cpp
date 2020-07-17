@@ -50,6 +50,7 @@ std::vector<double> LinearLayer::forward(const std::vector<double>& x, int batch
 
 std::vector<double> LinearLayer::backward(const std::vector<double>& dL_wrt_output) {
 	assert(dL_wrt_output.size() == bs*rows);
+	dL_wrt_W.resize(W.size());
 	for (int i = 0; i < dL_wrt_W.size(); ++i) {
 		dL_wrt_W[i] = 0;
 	}

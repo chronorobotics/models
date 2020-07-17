@@ -11,6 +11,8 @@ class SquareError
 		std::vector<double> forward(const std::vector<double>& x, const std::vector<double>& y, int batch_size);
 		std::vector<double> backward();
 
+		void set_size(int new_size);
+
 	private:
 		int size;
 		std::vector<double> last_x;

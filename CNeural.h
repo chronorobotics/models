@@ -16,16 +16,18 @@ class CNeural : public CTemporal
 {
 	public:
 		CNeural(int idd);
+		CNeural(int idd, int dimension_);
 		~CNeural();
 
 		void init(int iMaxPeriod, int elements, int numClasses);
 
 		//adds a serie of measurements to the data
 		int add(uint32_t time,float state);
-
+		int add_v(uint32_t time, const std::vector<double>& state);
 
 		//estimates the probability for the given times - using stored histogram
 		float estimate(uint32_t time);
+		std::vector<float> estimate_v(uint32_t time);
 
 		//predicts the probability for the given times - using updated histogram
 		float predict(uint32_t time);
@@ -46,12 +48,13 @@ class CNeural : public CTemporal
 		class TimeSample {
 			public:
 				TimeSample();
-				TimeSample(long int t_, float v_);
+				TimeSample(long int t_, const std::vector<double>& v_);
 				long int t;
-				float v;
+				std::vector<double> v;
 		};
-		TimeSample sampleArray[1000000];
+		std::vector<TimeSample> sampleArray;
 		int numSamples;
+		int dimension;
 		long int min_time;
 		long int max_time;
 

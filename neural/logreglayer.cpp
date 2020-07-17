@@ -59,6 +59,9 @@ std::vector<double> LogregLayer::forward(const std::vector<double>& x, int batch
 
 std::vector<double> LogregLayer::backward(const std::vector<double>& dL_wrt_output) {
 	assert(dL_wrt_output.size() == bs*sets*channels);
+	dL_wrt_xw.resize(xw.size());
+	dL_wrt_yw.resize(yw.size());
+	dL_wrt_zw.resize(zw.size());
 	for (int c = 0; c < xw.size(); ++c) {
 		dL_wrt_xw[c] = 0;
 		dL_wrt_yw[c] = 0;

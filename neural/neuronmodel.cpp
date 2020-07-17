@@ -38,7 +38,7 @@ double NeuronModel::forward(const std::vector<double>& x_, const std::vector<dou
 		er += error[i];
 	}
 	er /= error.size();
-	std::cout << "Mean Square Error = " << er << std::endl;
+	std::cerr << "Mean Square Error = " << er << std::endl;
 	return er;
 }
 
@@ -56,6 +56,16 @@ void NeuronModel::step(float rate) {
 	}
 }
 
+void NeuronModel::backward1() {
+	std::vector<double> dL_wrt_output = se.backward();
+	dL_wrt_output = layers[layers.size()-1]->backward(dL_wrt_output);
+}
+
+void NeuronModel::step1(float rate) {
+	layers[layers.size()-1]->step(rate);
+}
+
+
 void NeuronModel::simplify() {
 	for (int i = 0; i < layers.size(); ++i) {
 		layers[i]->simplify();
@@ -64,6 +74,10 @@ void NeuronModel::simplify() {
 
 void NeuronModel::add_layer(std::shared_ptr<NeuronLayer> layer) {
 	layers.push_back(layer);
+}
+
+void NeuronModel::pop_layer() {
+	layers.pop_back();
 }
 
 void NeuronModel::save(FILE* file, bool lossy) {
@@ -141,4 +155,8 @@ void NeuronModel::print() {
 	for (int i = 0; i < layers.size(); ++i) {
 		layers[i]->print();
 	}
+}
+
+void NeuronModel::set_output_size(int new_size) {
+	se.set_size(new_size);
 }
