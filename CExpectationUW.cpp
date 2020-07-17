@@ -4,8 +4,9 @@
 #include "CExpectationUW.h"
 
 CExpectationUW::CExpectationUW(int idd) :
-	positive(idd),
-	negative(idd)
+	models(),
+	means(),
+	class_model(7)
 {
 	id=idd;
 	firstTime = -1;
@@ -16,8 +17,9 @@ CExpectationUW::CExpectationUW(int idd) :
 	type = TT_EXPECTATION_UW;
 	numSamples = 0;
 
-	positives = 0;
-	negatives = 0;
+	for (int i = class_model.get_cluster_count(); i; --i) {
+		models.push_back(EMUnwrapped(idd));
+	}
 
 	srandom(time(0));
 }
@@ -51,21 +53,34 @@ int CExpectationUW::add(uint32_t time, float state)
 	sampleArray[numSamples] = TimeSample(time, state);
 	numSamples++;
 
-	if (state > 0.5) {
-		positive.add_time(time, 1);
-		positives++;
-	} else {
-		negative.add_time(time, 1);
-		negatives++;
-	}
+	class_model.add_value(state);
 	return 0;
 }
 
 /*not required in incremental version*/
 void CExpectationUW::update(int modelOrder, unsigned int* times, float* signal, int length)
 {
-	positive.train();
-	negative.train();
+	class_model.train();
+	means = class_model.get_means();
+	std::cout << numSamples << " " << means.size() << " " << models.size() << std::endl;
+	for (int i = 0; i < numSamples; ++i) {
+		std::vector<double> alpha = class_model.get_alpha_at(sampleArray[i].v);
+		int index = 0;
+		double max = 0;
+		for (int j = 0; j < alpha.size(); ++j) {
+			if (alpha[j] > max) {
+				max = alpha[j];
+				index = j;
+			}
+		}
+		models[index].add_time(sampleArray[i].t, 1);
+	}
+
+	for (int i = 0; i < models.size(); ++i) {
+		models[i].train();
+	}
+
+	class_model.print();
 
 	ofstream myfile0("0.txt");
 	ofstream myfile1("1.txt");
@@ -84,20 +99,24 @@ void CExpectationUW::update(int modelOrder, unsigned int* times, float* signal, 
 /*text representation of the fremen model*/
 void CExpectationUW::print(bool verbose)
 {
-	std::cout << "Positive:";
-	positive.print();
-	std::cout << std::endl << "Negative:";
-	negative.print();
-	std::cout << std::endl;
+	for (int i = 0; i < means.size(); ++i) {
+		std::cout << "Mean " << means[i] << ": ";
+		models[i].print();
+		std::cout << std::endl;
+	}
 }
 
 float CExpectationUW::estimate(uint32_t time)
 {
-	double pd = positive.get_density_at(time) * positives;
-	double nd = negative.get_density_at(time) * negatives;
+	double s = 0;
+	double t = 0;
+	for (int i = 0; i < means.size(); ++i) {
+		double density = models[i].get_density_at(time);
+		s += means[i] * density;
+		t += density;
+	}
 
-	return pd / (pd + nd);
-	return pd;
+	return s/t;
 }
 
 float CExpectationUW::predict(uint32_t time)
@@ -124,30 +143,36 @@ int CExpectationUW::load(const char* name)
 
 int CExpectationUW::save(FILE* file, bool lossy)
 {
-	positive.save(file, lossy);
-	negative.save(file, lossy);
-	fwrite(&positives, sizeof(int), 1, file);
-	fwrite(&negatives, sizeof(int), 1, file);
+	int size = models.size();
+	fwrite(&size, sizeof(int), 1, file);
+	for (int i = 0; i < models.size(); ++i) {
+		fwrite(&(means[i]), sizeof(double), 1, file);
+		models[i].save(file, lossy);
+	}
 	return 0;
 }
 
 int CExpectationUW::load(FILE* file)
 {
-	positive.load(file);
-	negative.load(file);
-	fread(&positives, sizeof(int), 1, file);
-	fread(&negatives, sizeof(int), 1, file);
+	int size;
+	fread(&size, sizeof(int), 1, file);
+	means.resize(size);
+	models.resize(size);
+	for (int i = 0; i < models.size(); ++i) {
+		fread(&(means[i]), sizeof(double), 1, file);
+		models[i].load(file);
+	}
 	return 0;
 }
 
 int CExpectationUW::exportToArray(double* array,int maxLen)
 {
 	int pos = 0;
-	array[pos++] = type;
-	positive.exportToArray(array, maxLen, pos);
-	negative.exportToArray(array, maxLen, pos);
-	array[pos++] = positives;
-	array[pos++] = negatives;
+	array[pos++] = models.size();
+	for (int i = 0; i < models.size(); ++i) {
+		array[pos++] = means[i];
+		models[i].exportToArray(array, maxLen, pos);
+	}
 	return pos;
 }
 
@@ -156,10 +181,13 @@ int CExpectationUW::importFromArray(double* array,int len)
 	int pos = 0;
 	type = (ETemporalType)array[pos++];
 	if (type != TT_EXPECTATION_UW) std::cerr << "Error loading the model, type mismatch." << std::endl;
-	positive.importFromArray(array, len, pos);
-	negative.importFromArray(array, len, pos);
-	positives = array[pos++];
-	negatives = array[pos++];
+	int size = array[pos++];
+	means.resize(size);
+	models.resize(size);
+	for (int i = 0; i < models.size(); ++i) {
+		means[i] = array[pos++];
+		models[i].importFromArray(array, len, pos);
+	}
 	update(0);
 	return pos;
 }

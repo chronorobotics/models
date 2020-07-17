@@ -12,6 +12,7 @@
 
 #include "em/em_sqdist.h"
 #include "em/em_von_mises.h"
+#include "em/em_gaussian.h"
 
 class CExpectationVM : public CTemporal
 {
@@ -54,11 +55,11 @@ class CExpectationVM : public CTemporal
 		TimeSample sampleArray[1000000];
 		int numSamples;
 
-		EMVonMises positive;
-		EMVonMises negative;
-
-		int positives;
-		int negatives;
+		/*EMEllipticSqdist positive;
+		EMEllipticSqdist negative;*/
+		std::vector<EMVonMises> models;
+		std::vector<double> means;
+		EMGaussian class_model;
 };
 
 #endif // CExpectationVM_H

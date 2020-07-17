@@ -65,9 +65,15 @@ void CExpectation::update(int modelOrder, unsigned int* times, float* signal, in
 	std::cout << numSamples << " " << means.size() << " " << models.size() << std::endl;
 	for (int i = 0; i < numSamples; ++i) {
 		std::vector<double> alpha = class_model.get_alpha_at(sampleArray[i].v);
+		int index = 0;
+		double max = 0;
 		for (int j = 0; j < alpha.size(); ++j) {
-			models[j].add_time(sampleArray[i].t, alpha[j]);
+			if (alpha[j] > max) {
+				max = alpha[j];
+				index = j;
+			}
 		}
+		models[index].add_time(sampleArray[i].t, 1);
 	}
 
 	for (int i = 0; i < models.size(); ++i) {

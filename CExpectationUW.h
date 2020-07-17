@@ -10,6 +10,9 @@
 #include <vector>
 #include "CTemporal.h"
 
+#include "em/em_sqdist.h"
+#include "em/em_von_mises.h"
+#include "em/em_gaussian.h"
 #include "em/em_unwrapped.h"
 
 class CExpectationUW : public CTemporal
@@ -53,11 +56,11 @@ class CExpectationUW : public CTemporal
 		TimeSample sampleArray[1000000];
 		int numSamples;
 
-		EMUnwrapped positive;
-		EMUnwrapped negative;
-
-		int positives;
-		int negatives;
+		/*EMEllipticSqdist positive;
+		EMEllipticSqdist negative;*/
+		std::vector<EMUnwrapped> models;
+		std::vector<double> means;
+		EMGaussian class_model;
 };
 
 #endif // CExpectationUW_H

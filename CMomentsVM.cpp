@@ -9,11 +9,12 @@ CMomentsVM::CMomentsVM(int idd) :
 {
 	type = TT_MOMENTS;
 
-	pos_density = DensityParams::create(this, DensityParams::VON_MISES);
-	neg_density = DensityParams::create(this, DensityParams::VON_MISES);
+	for (int i = class_model.get_cluster_count(); i; --i) {
+		densities.push_back(std::move(DensityParams::create(this, DensityParams::VON_MISES)));
+		estimators.push_back(densities[densities.size()-1]->get_moment_estimator());
+	}
 
-	pos_estimator = pos_density->get_moment_estimator();
-	neg_estimator = neg_density->get_moment_estimator();
+	srandom(time(0));
 }
 
 CMomentsVM::~CMomentsVM()

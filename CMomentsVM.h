@@ -12,6 +12,7 @@
 
 #include "moments/moment_estimator.h"
 #include "moments/density_params.h"
+#include "em/em_gaussian.h"
 #include "CMoments.h"
 
 #define MAX_ID_LENGTH 100
