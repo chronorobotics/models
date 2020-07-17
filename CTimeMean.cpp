@@ -56,18 +56,18 @@ void CTimeMean::print(bool verbose)
 float CTimeMean::estimate(uint32_t time)
 {
 	float estimate = estimation;//positive/measurements; 
-	float saturation = 0.001;
-	if (estimate > 1.0-saturation) estimate =  1.0-saturation;
-	if (estimate < 0.0+saturation) estimate =  0.0+saturation;
+	//float saturation = 0.001;
+	//if (estimate > 1.0-saturation) estimate =  1.0-saturation;
+	//if (estimate < 0.0+saturation) estimate =  0.0+saturation;
 	return estimate;
 }
 
 float CTimeMean::predict(uint32_t time)
 {
 	float estimate = estimation; 
-	float saturation = 0.001;
-	if (estimate > 1.0-saturation) estimate =  1.0-saturation;
-	if (estimate < 0.0+saturation) estimate =  0.0+saturation;
+	//float saturation = 0.001;
+	//if (estimate > 1.0-saturation) estimate =  1.0-saturation;
+	//if (estimate < 0.0+saturation) estimate =  0.0+saturation;
 	return estimate;
 }
 int CTimeMean::save(const char* name,bool lossy)

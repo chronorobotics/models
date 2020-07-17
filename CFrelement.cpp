@@ -138,7 +138,7 @@ float CFrelement::estimate(uint32_t time)
 	float saturation = 0.01;
 	float estimate =  predictGain;
 	for (int i = 0;i<order;i++) estimate+=2*predictFrelements[i].amplitude*cos(time/predictFrelements[i].period*2*M_PI-predictFrelements[i].phase);
-	if (estimate > 1.0-saturation) estimate =  1.0-saturation;
+	if (estimate > 30.0-saturation) estimate =  1.0-saturation;
 	if (estimate < 0.0+saturation) estimate =  0.0+saturation;
 	return estimate;
 }
@@ -149,7 +149,7 @@ float CFrelement::predict(uint32_t time)
 	float saturation = 0.01;
 	float estimate =  predictGain;
 	for (int i = 0;i<order;i++) estimate+=2*predictFrelements[i].amplitude*cos(time/predictFrelements[i].period*2*M_PI-predictFrelements[i].phase);
-	if (estimate > 1.0-saturation) estimate =  1.0-saturation;
+	if (estimate > 30.0-saturation) estimate =  1.0-saturation;
 	if (estimate < 0.0+saturation) estimate =  0.0+saturation;
 	return estimate;
 }
