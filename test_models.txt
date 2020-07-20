@@ -5,9 +5,9 @@
 !HyT-EM 1 2 3 4 5
 #HyT-KM 0
 !FreMEn 1 2 3 4 5
-HyT-CEM-vM 1
-HyT-CEM-wC 1
-LiT-EM 1
+HyT-CEM-vM 1 2 3 4 5
+HyT-CEM-wC 1 2 3 4 5
+LiT-EM 1 2 3 4 5
 
 #GMM 	 1 2 3 4 5
 #VonMises 1 2 3 4 5 
