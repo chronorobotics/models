@@ -4,8 +4,8 @@
 !Mean	 0
 #None     0
 !Hist 1 4 12 24
-!HyT-CEM-wC 5 10 15 20 25 30
-!HyT-CEM-vM 5 10 15 20 25 30
+HyT-CEM-wC 5 10 15 20 25 30
+HyT-CEM-vM 5 10 15 20 25 30
 LiT-EM 5 10 15 20 25 30
 
 #GMM 	 1 2 3 4 5
